@@ -3,6 +3,33 @@ import { PrismaService } from '../database/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { Setting } from '@monorepo/shared-types';
 
+const KNOWN_DEFAULT_SETTINGS: Record<
+  string,
+  { value: string; type: string; category: string; is_public: boolean; description: string }
+> = {
+  'ui.theme.default': {
+    value: 'light',
+    type: 'STRING',
+    category: 'UI',
+    is_public: true,
+    description: 'System-wide default theme (light, dark, system)',
+  },
+  'ui.pagination_default': {
+    value: '10',
+    type: 'NUMBER',
+    category: 'UI',
+    is_public: true,
+    description: 'Default items per page for data tables',
+  },
+  'app.name': {
+    value: 'Monorepo Enterprise Platform',
+    type: 'STRING',
+    category: 'GENERAL',
+    is_public: true,
+    description: 'Application display name',
+  },
+};
+
 @Injectable()
 export class SettingsService {
   constructor(
@@ -17,13 +44,36 @@ export class SettingsService {
       orderBy: [{ category: 'asc' }, { key: 'asc' }],
     });
 
+    // Auto-heal missing essential UI settings if absent
+    if (!items.some((i) => i.key === 'ui.theme.default')) {
+      const defaultTheme = await this.prisma.setting.upsert({
+        where: { key: 'ui.theme.default' },
+        update: {},
+        create: {
+          key: 'ui.theme.default',
+          ...KNOWN_DEFAULT_SETTINGS['ui.theme.default'],
+        },
+      });
+      items.push(defaultTheme as any);
+    }
+
     return items as unknown as Setting[];
   }
 
   async getByKey(key: string): Promise<Setting> {
-    const item = await this.prisma.setting.findUnique({
+    let item = await this.prisma.setting.findUnique({
       where: { key },
     });
+
+    if (!item && key in KNOWN_DEFAULT_SETTINGS) {
+      item = await this.prisma.setting.create({
+        data: {
+          key,
+          ...KNOWN_DEFAULT_SETTINGS[key],
+        },
+      });
+    }
+
     if (!item) {
       throw new NotFoundException(`Setting with key "${key}" not found`);
     }
@@ -31,9 +81,19 @@ export class SettingsService {
   }
 
   async update(key: string, value: string, actorUuid?: string): Promise<Setting> {
-    const existing = await this.prisma.setting.findUnique({
+    let existing = await this.prisma.setting.findUnique({
       where: { key },
     });
+
+    if (!existing && key in KNOWN_DEFAULT_SETTINGS) {
+      existing = await this.prisma.setting.create({
+        data: {
+          key,
+          ...KNOWN_DEFAULT_SETTINGS[key],
+        },
+      });
+    }
+
     if (!existing) {
       throw new NotFoundException(`Setting with key "${key}" not found`);
     }
@@ -74,4 +134,5 @@ export class SettingsService {
     return updated as unknown as Setting;
   }
 }
+
 

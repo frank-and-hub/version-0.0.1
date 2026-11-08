@@ -244,6 +244,7 @@ async function main() {
     { key: 'auth.registration_enabled', value: 'true', type: 'BOOLEAN', category: 'AUTHENTICATION', is_public: true, description: 'Whether public registration is enabled' },
     { key: 'auth.session_timeout_minutes', value: '60', type: 'NUMBER', category: 'SECURITY', is_public: false, description: 'Idle session timeout in minutes' },
     { key: 'ui.pagination_default', value: '10', type: 'NUMBER', category: 'UI', is_public: true, description: 'Default items per page for data tables' },
+    { key: 'ui.theme.default', value: 'light', type: 'STRING', category: 'UI', is_public: true, description: 'System-wide default theme (light, dark, system)' },
     { key: 'app.timezone', value: 'UTC', type: 'STRING', category: 'GENERAL', is_public: true, description: 'System timezone' },
     { key: 'app.date_format', value: 'YYYY-MM-DD HH:mm:ss', type: 'STRING', category: 'UI', is_public: true, description: 'Display format for timestamps' },
     { key: 'notifications.email_alerts_enabled', value: 'true', type: 'BOOLEAN', category: 'NOTIFICATIONS', is_public: false, description: 'Enable system security alerts' },
