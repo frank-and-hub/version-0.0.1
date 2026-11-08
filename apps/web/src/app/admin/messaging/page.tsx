@@ -14,6 +14,7 @@ import {
   WebhookManagerTab,
   EmailMessageDetailsModal,
   EmailAnalyticsDashboardTab,
+  WhatsAppMessagingTab,
 } from "@/components/messaging";
 import {
   Mail,
@@ -34,6 +35,7 @@ import {
   TrendingUp,
   Eye,
   X,
+  MessageSquare,
 } from "lucide-react";
 
 interface EmailTemplate {
@@ -71,6 +73,7 @@ export default function MessagingPage() {
   const [activeTab, setActiveTab] = useState<
     | "overview"
     | "providers"
+    | "whatsapp"
     | "webhooks"
     | "analytics"
     | "templates"
@@ -97,6 +100,9 @@ export default function MessagingPage() {
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const [editingConfig, setEditingConfig] =
     useState<UserProviderConfiguration | null>(null);
+  const [modalChannel, setModalChannel] = useState<"EMAIL" | "WHATSAPP">(
+    "EMAIL",
+  );
 
   // Template Modal state
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
@@ -124,7 +130,7 @@ export default function MessagingPage() {
     try {
       const [statsRes, configRes, tempRes, histRes] = await Promise.allSettled([
         api.get("/messaging/stats"),
-        api.get("/messaging/provider-configurations?type=EMAIL"),
+        api.get("/messaging/provider-configurations"),
         api.get("/messaging/templates"),
         api.get("/messaging/emails?limit=50"),
       ]);
@@ -148,12 +154,14 @@ export default function MessagingPage() {
     loadData();
   }, []);
 
-  const openConnectModal = () => {
+  const openConnectModal = (channel: "EMAIL" | "WHATSAPP" = "EMAIL") => {
+    setModalChannel(channel);
     setEditingConfig(null);
     setIsConnectModalOpen(true);
   };
 
   const handleEditConfig = (config: UserProviderConfiguration) => {
+    setModalChannel((config.type as any) === "WHATSAPP" ? "WHATSAPP" : "EMAIL");
     setEditingConfig(config);
     setIsConnectModalOpen(true);
   };
@@ -324,15 +332,17 @@ export default function MessagingPage() {
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
               Multi-Provider Messaging Platform
             </h1>
-            <Badge variant="indigo">Phase 1 & 2: Email + Webhooks</Badge>
+            <Badge variant="indigo">
+              Phase 1, 2 & 3: Email + Webhooks + WhatsApp
+            </Badge>
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Unified dynamic email provider connection with AES-256-GCM
-            encryption, Valkey queues, and templates.
+            Unified dynamic messaging with Meta WhatsApp Business Cloud API,
+            SendGrid/SMTP, AES-256-GCM encryption, Valkey queues, and templates.
           </p>
         </div>
 
-        {/* SINGLE UNIFIED PRIMARY ACTION BUTTON */}
+        {/* Header Action Buttons */}
         <div className="flex items-center gap-2.5">
           <Button
             variant="outline"
@@ -347,7 +357,16 @@ export default function MessagingPage() {
             <span className="hidden sm:inline">Refresh</span>
           </Button>
 
-          {/* <ConnectProviderButton onClick={openConnectModal} size="sm" /> */}
+          <ConnectProviderButton
+            onClick={() => openConnectModal("EMAIL")}
+            size="sm"
+            channel="EMAIL"
+          />
+          <ConnectProviderButton
+            onClick={() => openConnectModal("WHATSAPP")}
+            size="sm"
+            channel="WHATSAPP"
+          />
         </div>
       </div>
 
@@ -379,10 +398,11 @@ export default function MessagingPage() {
 
       {/* Navigation Tabs (Pill / Segmented Controls - No Horizontal Scroll) */}
       <div className="bg-slate-100/80 dark:bg-slate-900/80 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-800">
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1.5">
           {[
             { id: "overview", label: "Overview", icon: Server },
             { id: "providers", label: "Providers", icon: Key },
+            { id: "whatsapp", label: "WhatsApp", icon: MessageSquare },
             { id: "webhooks", label: "Webhooks", icon: Webhook },
             { id: "analytics", label: "Analytics", icon: TrendingUp },
             { id: "templates", label: "Templates", icon: FileText },
@@ -402,7 +422,9 @@ export default function MessagingPage() {
                     : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800/50 shadow-none"
                 }`}
               >
-                <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-indigo-600 dark:text-indigo-400" : "text-slate-500"}`} />
+                <Icon
+                  className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-indigo-600 dark:text-indigo-400" : "text-slate-500"}`}
+                />
                 <span className="truncate">{tab.label}</span>
               </button>
             );
@@ -489,10 +511,14 @@ export default function MessagingPage() {
                 </p>
               </div>
 
-              {/* <ConnectProviderButton onClick={openConnectModal} size="sm" /> */}
+              <ConnectProviderButton
+                onClick={() => openConnectModal("EMAIL")}
+                size="sm"
+                channel="EMAIL"
+              />
             </div>
 
-            {configurations.length === 0 ? (
+            {configurations.filter((c) => c.type === "EMAIL").length === 0 ? (
               <div className="py-10 text-center space-y-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
                 <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950 flex items-center justify-center mx-auto text-indigo-600">
                   <Mail className="w-6 h-6" />
@@ -506,23 +532,29 @@ export default function MessagingPage() {
                     click to enable outbound notifications.
                   </p>
                 </div>
-                <ConnectProviderButton onClick={openConnectModal} size="sm" />
+                {/* <ConnectProviderButton
+                  onClick={() => openConnectModal("EMAIL")}
+                  size="sm"
+                  channel="EMAIL"
+                /> */}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {configurations.map((config) => (
-                  <ConnectedProviderCard
-                    key={config.configuration_uuid}
-                    configuration={config}
-                    onEdit={handleEditConfig}
-                    onTest={handleTestConnection}
-                    onSetDefault={handleSetDefault}
-                    onDelete={handleDeleteConfig}
-                    isActionLoading={actionLoading?.includes(
-                      config.configuration_uuid,
-                    )}
-                  />
-                ))}
+                {configurations
+                  .filter((c) => c.type === "EMAIL")
+                  .map((config) => (
+                    <ConnectedProviderCard
+                      key={config.configuration_uuid}
+                      configuration={config}
+                      onEdit={handleEditConfig}
+                      onTest={handleTestConnection}
+                      onSetDefault={handleSetDefault}
+                      onDelete={handleDeleteConfig}
+                      isActionLoading={actionLoading?.includes(
+                        config.configuration_uuid,
+                      )}
+                    />
+                  ))}
               </div>
             )}
           </Card>
@@ -543,38 +575,57 @@ export default function MessagingPage() {
               </p>
             </div>
 
-            {/* <ConnectProviderButton onClick={openConnectModal} size="sm" /> */}
+            <ConnectProviderButton
+              onClick={() => openConnectModal("EMAIL")}
+              size="sm"
+              channel="EMAIL"
+            />
           </div>
 
-          {/* Cards for configured providers */}
-          {configurations.length > 0 && (
+          {/* Cards for configured email providers */}
+          {configurations.filter((c) => c.type === "EMAIL").length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {configurations.map((config) => (
-                <ConnectedProviderCard
-                  key={config.configuration_uuid}
-                  configuration={config}
-                  onEdit={handleEditConfig}
-                  onTest={handleTestConnection}
-                  onSetDefault={handleSetDefault}
-                  onDelete={handleDeleteConfig}
-                  isActionLoading={actionLoading?.includes(
-                    config.configuration_uuid,
-                  )}
-                />
-              ))}
+              {configurations
+                .filter((c) => c.type === "EMAIL")
+                .map((config) => (
+                  <ConnectedProviderCard
+                    key={config.configuration_uuid}
+                    configuration={config}
+                    onEdit={handleEditConfig}
+                    onTest={handleTestConnection}
+                    onSetDefault={handleSetDefault}
+                    onDelete={handleDeleteConfig}
+                    isActionLoading={actionLoading?.includes(
+                      config.configuration_uuid,
+                    )}
+                  />
+                ))}
             </div>
           )}
 
-          {configurations.length === 0 && (
+          {configurations.filter((c) => c.type === "EMAIL").length === 0 && (
             <Card className="p-8 text-center space-y-3">
               <p className="text-sm text-slate-500">
-                No active provider configurations found. Click below to connect
-                your first provider.
+                No active email provider configurations found. Click below to
+                connect your first email provider.
               </p>
-              <ConnectProviderButton onClick={openConnectModal} />
+              {/* <ConnectProviderButton
+                onClick={() => openConnectModal("EMAIL")}
+                channel="EMAIL"
+              /> */}
             </Card>
           )}
         </div>
+      )}
+
+      {/* TAB: WHATSAPP BUSINESS PLATFORM */}
+      {activeTab === "whatsapp" && (
+        <WhatsAppMessagingTab
+          configurations={configurations}
+          onOpenConnectModal={(ch) => openConnectModal(ch || "WHATSAPP")}
+          onEditConfig={handleEditConfig}
+          onRefresh={loadData}
+        />
       )}
 
       {/* TAB: WEBHOOKS & DELIVERY EVENTS */}
@@ -934,7 +985,7 @@ export default function MessagingPage() {
         </Card>
       )}
 
-      {/* UNIFIED CONNECT YOUR EMAIL PROVIDER MODAL */}
+      {/* UNIFIED DYNAMIC PROVIDER CONNECTION MODAL (EMAIL / WHATSAPP) */}
       <ProviderSelectionModal
         isOpen={isConnectModalOpen}
         onClose={() => {
@@ -942,13 +993,13 @@ export default function MessagingPage() {
           setEditingConfig(null);
         }}
         editConfig={editingConfig}
-        channel="EMAIL"
+        channel={modalChannel}
         onSuccess={(saved) => {
           setFeedback({
             type: "success",
             message: editingConfig
-              ? "Provider configuration updated successfully!"
-              : "Provider connected and credentials encrypted successfully!",
+              ? `${modalChannel === "WHATSAPP" ? "WhatsApp" : "Email"} configuration updated successfully!`
+              : `${modalChannel === "WHATSAPP" ? "WhatsApp" : "Email"} provider connected and credentials encrypted successfully!`,
           });
           loadData();
         }}

@@ -3,6 +3,16 @@ import { EmailProviderInterface } from '../adapters/email-provider.interface';
 import { SmtpEmailProvider } from '../adapters/smtp-email.provider';
 import { SendGridEmailProvider } from '../adapters/sendgrid-email.provider';
 import { PrescaledSmtpProvider, PRESET_SMTP_PROVIDERS } from '../adapters/prescaled-smtp.provider';
+import {
+  WhatsAppCloudApiAdapter,
+  InteraktWhatsAppAdapter,
+  WatiWhatsAppAdapter,
+  TwilioWhatsAppAdapter,
+  InfobipWhatsAppAdapter,
+  GupshupWhatsAppAdapter,
+  VonageWhatsAppAdapter,
+  AiSensyWhatsAppAdapter,
+} from '../adapters/whatsapp-cloud.provider';
 
 @Injectable()
 export class ProviderRegistryService {
@@ -11,9 +21,25 @@ export class ProviderRegistryService {
   constructor(
     private readonly smtpProvider: SmtpEmailProvider,
     private readonly sendgridProvider: SendGridEmailProvider,
+    private readonly whatsappProvider: WhatsAppCloudApiAdapter,
+    private readonly interaktProvider: InteraktWhatsAppAdapter,
+    private readonly watiProvider: WatiWhatsAppAdapter,
+    private readonly twilioProvider: TwilioWhatsAppAdapter,
+    private readonly infobipProvider: InfobipWhatsAppAdapter,
+    private readonly gupshupProvider: GupshupWhatsAppAdapter,
+    private readonly vonageProvider: VonageWhatsAppAdapter,
+    private readonly aisensyProvider: AiSensyWhatsAppAdapter,
   ) {
     this.registerAdapter(this.smtpProvider);
     this.registerAdapter(this.sendgridProvider);
+    this.registerAdapter(this.whatsappProvider);
+    this.registerAdapter(this.interaktProvider);
+    this.registerAdapter(this.watiProvider);
+    this.registerAdapter(this.twilioProvider);
+    this.registerAdapter(this.infobipProvider);
+    this.registerAdapter(this.gupshupProvider);
+    this.registerAdapter(this.vonageProvider);
+    this.registerAdapter(this.aisensyProvider);
 
     // Register all preset SMTP email providers so they are immediately fully functional!
     for (const slug of Object.keys(PRESET_SMTP_PROVIDERS)) {

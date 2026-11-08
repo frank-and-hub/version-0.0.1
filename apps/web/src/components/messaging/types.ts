@@ -34,7 +34,8 @@ export interface UserProviderConfiguration {
   configuration_name: string;
   type: string;
   sender_name: string;
-  sender_email: string;
+  sender_email?: string;
+  sender_phone?: string;
   reply_to?: string;
   is_active: boolean;
   is_verified: boolean;

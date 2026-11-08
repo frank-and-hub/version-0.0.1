@@ -11,23 +11,34 @@ interface ProviderConfigurationFieldsProps {
   disabled?: boolean;
 }
 
+const EXCLUDED_FIELDS = new Set([
+  'configuration_name',
+  'sender_name',
+  'sender_email',
+  'sender_phone',
+  'reply_to',
+  'is_default',
+]);
+
 export const ProviderConfigurationFields: React.FC<ProviderConfigurationFieldsProps> = ({
   fields,
   credentials,
   onChange,
   disabled = false,
 }) => {
-  if (!fields || fields.length === 0) {
+  const credentialFields = (fields || []).filter((f) => !EXCLUDED_FIELDS.has(f.name));
+
+  if (!credentialFields || credentialFields.length === 0) {
     return (
       <div className="p-4 text-center text-xs text-slate-400 bg-slate-50 dark:bg-slate-900 rounded-lg">
-        No credential fields required for this provider.
+        No additional credential fields required for this provider.
       </div>
     );
   }
 
   return (
     <div className="space-y-3.5">
-      {fields.map((field) => {
+      {credentialFields.map((field) => {
         // Evaluate conditional display if depends_on is specified
         if (field.depends_on) {
           const parentVal = credentials[field.depends_on.field];
@@ -36,7 +47,34 @@ export const ProviderConfigurationFields: React.FC<ProviderConfigurationFieldsPr
           }
         }
 
-        const value = credentials[field.name] !== undefined ? credentials[field.name] : (field.default_value ?? '');
+        const value =
+          credentials[field.name] !== undefined
+            ? credentials[field.name]
+            : (field.default_value ?? '');
+
+        if (field.type === 'boolean') {
+          return (
+            <div key={field.name} className="flex items-center gap-2 pt-1">
+              <input
+                type="checkbox"
+                id={`field_${field.name}`}
+                disabled={disabled}
+                checked={Boolean(value)}
+                onChange={(e) => onChange(field.name, e.target.checked)}
+                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
+              />
+              <label
+                htmlFor={`field_${field.name}`}
+                className="text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer"
+              >
+                {field.label} {field.required && <span className="text-rose-500">*</span>}
+              </label>
+              {field.description && (
+                <span className="text-[11px] text-slate-400 ml-1">({field.description})</span>
+              )}
+            </div>
+          );
+        }
 
         if (field.type === 'select') {
           return (
@@ -98,7 +136,11 @@ export const ProviderConfigurationFields: React.FC<ProviderConfigurationFieldsPr
               onChange={(e) =>
                 onChange(
                   field.name,
-                  field.type === 'number' ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value,
+                  field.type === 'number'
+                    ? e.target.value === ''
+                      ? ''
+                      : Number(e.target.value)
+                    : e.target.value,
                 )
               }
               required={field.required}

@@ -9,3 +9,5 @@ export * from './ConnectedProviderCard';
 export * from './WebhookManagerTab';
 export * from './EmailMessageDetailsModal';
 export * from './EmailAnalyticsDashboardTab';
+export * from './WhatsAppMessagingTab';
+export * from './WhatsAppTemplateModal';

@@ -10,6 +10,7 @@ export interface CreateProviderConfigDto {
   credentials: Record<string, any>;
   sender_name?: string;
   sender_email?: string;
+  sender_phone?: string;
   reply_to?: string;
   is_default?: boolean;
 }
@@ -19,6 +20,7 @@ export interface UpdateProviderConfigDto {
   credentials?: Record<string, any>;
   sender_name?: string;
   sender_email?: string;
+  sender_phone?: string;
   reply_to?: string;
   is_active?: boolean;
   is_default?: boolean;
@@ -186,7 +188,8 @@ export class ProviderConfigurationService {
         type: provider.type,
         credentials: encryptedCredentials,
         sender_name: dto.sender_name || 'Antigravity User',
-        sender_email: dto.sender_email || 'noreply@example.com',
+        sender_email: dto.sender_email || (provider.type === 'WHATSAPP' ? null : 'noreply@example.com'),
+        sender_phone: dto.sender_phone || dto.credentials?.sender_phone || null,
         reply_to: dto.reply_to || null,
         is_default: !!dto.is_default,
         is_active: true,
@@ -261,7 +264,8 @@ export class ProviderConfigurationService {
         configuration_name: dto.configuration_name ?? existing.configuration_name,
         credentials: encryptedCredentials,
         sender_name: dto.sender_name ?? existing.sender_name,
-        sender_email: dto.sender_email ?? existing.sender_email,
+        sender_email: dto.sender_email !== undefined ? dto.sender_email : existing.sender_email,
+        sender_phone: dto.sender_phone !== undefined ? dto.sender_phone : existing.sender_phone,
         reply_to: dto.reply_to ?? existing.reply_to,
         is_active: dto.is_active ?? existing.is_active,
         is_default: dto.is_default ?? existing.is_default,
@@ -385,7 +389,7 @@ export class ProviderConfigurationService {
     return { success: true, message: 'Provider configuration deleted successfully' };
   }
 
-  async getDecryptedConfiguration(userUuid: string, configUuid?: string, channel = MessagingChannel.EMAIL) {
+  async getDecryptedConfiguration(userUuid: string, configUuid?: string, channel: MessagingChannel = MessagingChannel.EMAIL) {
     let config;
     if (configUuid) {
       config = await this.prisma.userProviderConfiguration.findFirst({
@@ -425,7 +429,7 @@ export class ProviderConfigurationService {
 
     if (!config) {
       throw new BadRequestException(
-        `No active ${channel} provider configured. Please configure an email provider in Messaging Settings.`,
+        `No active ${channel} provider configured. Please configure a ${channel.toLowerCase()} provider in Messaging Settings.`,
       );
     }
 

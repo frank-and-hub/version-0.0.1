@@ -22,6 +22,7 @@ interface DynamicProviderFormProps {
     configuration_name?: string;
     sender_name?: string;
     sender_email?: string;
+    sender_phone?: string;
     reply_to?: string;
     is_default?: boolean;
     credentials?: Record<string, any>;
@@ -40,14 +41,19 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
   onSuccess,
   onCancel,
 }) => {
+  const isWhatsApp = provider.type === 'WHATSAPP';
+
   const [configurationName, setConfigurationName] = useState(
     initialValues?.configuration_name || `${provider.name} Connection`,
   );
   const [senderName, setSenderName] = useState(
-    initialValues?.sender_name || 'Antigravity Platform',
+    initialValues?.sender_name || (isWhatsApp ? 'WhatsApp Official Business' : 'Antigravity Platform'),
   );
   const [senderEmail, setSenderEmail] = useState(
-    initialValues?.sender_email || 'notifications@antigravity.dev',
+    initialValues?.sender_email || (isWhatsApp ? '' : 'notifications@antigravity.dev'),
+  );
+  const [senderPhone, setSenderPhone] = useState(
+    initialValues?.sender_phone || initialValues?.credentials?.sender_phone || '',
   );
   const [replyTo, setReplyTo] = useState(initialValues?.reply_to || '');
   const [isDefault, setIsDefault] = useState(initialValues?.is_default || false);
@@ -91,22 +97,17 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
     setErrorMsg(null);
 
     try {
-      let res: any;
-      if (isEditMode && initialValues?.configuration_uuid) {
-        // Test saved or test with merged ad-hoc credentials
-        res = await api.post(`/messaging/provider-configurations/test`, {
-          provider_slug: provider.slug,
-          credentials,
-        });
-      } else {
-        // Test ad-hoc credentials without persisting
-        res = await api.post('/messaging/provider-configurations/test', {
-          provider_slug: provider.slug,
-          credentials,
-        });
-      }
+      const credsToTest = {
+        ...credentials,
+        ...(isWhatsApp && senderPhone ? { sender_phone: senderPhone } : {}),
+      };
 
-      const data = res.data || res;
+      const res: any = await api.post('/messaging/provider-configurations/test', {
+        provider_slug: provider.slug,
+        credentials: credsToTest,
+      });
+
+      const data = res?.data || res;
       setTestResult({
         tested: true,
         success: !!data.success,
@@ -132,10 +133,14 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
       const payload: any = {
         configuration_name: configurationName,
         sender_name: senderName,
-        sender_email: senderEmail,
-        reply_to: replyTo || undefined,
+        sender_email: isWhatsApp ? undefined : senderEmail,
+        sender_phone: isWhatsApp ? senderPhone : undefined,
+        reply_to: isWhatsApp ? undefined : (replyTo || undefined),
         is_default: isDefault,
-        credentials,
+        credentials: {
+          ...credentials,
+          ...(isWhatsApp && senderPhone ? { sender_phone: senderPhone } : {}),
+        },
       };
 
       let result: any;
@@ -226,42 +231,71 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
         </div>
       )}
 
-      {/* Basic Configuration Fields */}
-      <div className="space-y-3">
-        <Input
-          label="Configuration Name *"
-          placeholder="e.g., Primary Production SMTP"
-          value={configurationName}
-          onChange={(e) => setConfigurationName(e.target.value)}
-          required
-        />
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {/* Channel Specific Header Fields */}
+      {isWhatsApp ? (
+        <div className="space-y-3">
           <Input
-            label="Default Sender Name *"
-            placeholder="Acme Support"
-            value={senderName}
-            onChange={(e) => setSenderName(e.target.value)}
+            label="WhatsApp Configuration Name *"
+            placeholder="e.g., Support WhatsApp Line"
+            value={configurationName}
+            onChange={(e) => setConfigurationName(e.target.value)}
             required
           />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              label="Business Display Name *"
+              placeholder="Acme Support"
+              value={senderName}
+              onChange={(e) => setSenderName(e.target.value)}
+              required
+            />
+            <Input
+              label="WhatsApp Phone Number (E.164) *"
+              placeholder="+1 (555) 019-2834"
+              value={senderPhone}
+              onChange={(e) => setSenderPhone(e.target.value)}
+              required
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
           <Input
-            label="Default Sender Email *"
-            type="email"
-            placeholder="support@acme.com"
-            value={senderEmail}
-            onChange={(e) => setSenderEmail(e.target.value)}
+            label="Configuration Name *"
+            placeholder="e.g., Primary Production SMTP"
+            value={configurationName}
+            onChange={(e) => setConfigurationName(e.target.value)}
             required
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              label="Default Sender Name *"
+              placeholder="Acme Support"
+              value={senderName}
+              onChange={(e) => setSenderName(e.target.value)}
+              required
+            />
+            <Input
+              label="Default Sender Email *"
+              type="email"
+              placeholder="support@acme.com"
+              value={senderEmail}
+              onChange={(e) => setSenderEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          <Input
+            label="Reply-To Email (Optional)"
+            type="email"
+            placeholder="replies@acme.com"
+            value={replyTo}
+            onChange={(e) => setReplyTo(e.target.value)}
           />
         </div>
-
-        <Input
-          label="Reply-To Email (Optional)"
-          type="email"
-          placeholder="replies@acme.com"
-          value={replyTo}
-          onChange={(e) => setReplyTo(e.target.value)}
-        />
-      </div>
+      )}
 
       {/* Dynamic Provider Credentials Section */}
       <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">

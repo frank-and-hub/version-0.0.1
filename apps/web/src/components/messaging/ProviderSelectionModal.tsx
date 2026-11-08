@@ -34,14 +34,18 @@ export const ProviderSelectionModal: React.FC<ProviderSelectionModalProps> = ({
       setSelectedProvider(null);
       setError(null);
     }
-  }, [isOpen, editConfig]);
+  }, [isOpen, editConfig, channel]);
 
   const loadProviders = async () => {
     setIsLoading(true);
     setError(null);
     try {
       const res = (await api.get(`/messaging/providers?type=${channel}`)) as any;
-      const data: ProviderDefinition[] = res?.data || res || [];
+      const data: ProviderDefinition[] = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.data)
+          ? res.data
+          : [];
       setProviders(data);
 
       // If opening in edit mode, automatically find and select the matching provider
@@ -54,10 +58,18 @@ export const ProviderSelectionModal: React.FC<ProviderSelectionModalProps> = ({
         );
         if (found) {
           setSelectedProvider(found);
+        } else if (editConfig.provider) {
+          setSelectedProvider(editConfig.provider as any);
         }
+      } else {
+        setSelectedProvider(null);
       }
     } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || 'Failed to load email providers');
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          `Failed to load ${channel.toLowerCase()} providers`,
+      );
     } finally {
       setIsLoading(false);
     }
@@ -76,11 +88,15 @@ export const ProviderSelectionModal: React.FC<ProviderSelectionModalProps> = ({
                 ? `Edit ${editConfig.provider?.name || 'Provider'} Configuration`
                 : selectedProvider
                 ? `Connect ${selectedProvider.name}`
-                : 'Connect Your Email Provider'}
+                : 'Connect Provider'}
             </h2>
             <p className="text-xs text-slate-500">
               {selectedProvider
-                ? 'Fill in authentication credentials to start dispatching system emails'
+                ? channel === 'WHATSAPP'
+                  ? 'Fill in official credentials to start sending WhatsApp templates & interactive chats'
+                  : 'Fill in authentication credentials to start dispatching system emails'
+                : channel === 'WHATSAPP'
+                ? 'Choose from official Meta Cloud API, Interakt, WATI, and Twilio WhatsApp providers'
                 : 'Choose from supported high-throughput enterprise mail providers'}
             </p>
           </div>
@@ -112,6 +128,7 @@ export const ProviderSelectionModal: React.FC<ProviderSelectionModalProps> = ({
             />
           ) : (
             <DynamicProviderForm
+              key={`${selectedProvider.provider_uuid || selectedProvider.slug}_${editConfig?.configuration_uuid || 'new'}`}
               provider={selectedProvider}
               isEditMode={!!editConfig}
               initialValues={
@@ -121,6 +138,7 @@ export const ProviderSelectionModal: React.FC<ProviderSelectionModalProps> = ({
                       configuration_name: editConfig.configuration_name,
                       sender_name: editConfig.sender_name,
                       sender_email: editConfig.sender_email,
+                      sender_phone: editConfig.sender_phone,
                       reply_to: editConfig.reply_to,
                       is_default: editConfig.is_default,
                       credentials: editConfig.credentials,

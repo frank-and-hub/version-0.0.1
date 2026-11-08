@@ -410,42 +410,65 @@ pnpm mobile:build:apk
 
 ---
 
-### 11. Multi-Provider Messaging Platform (Phase 1 & Phase 2)
+### 11. Multi-Provider Messaging Platform (Phase 1, Phase 2 & Phase 3)
 
-The platform provides a scalable, enterprise multi-tenant messaging router with credential encryption, dynamic configuration schemas, templating engine, Valkey background queues, cryptographic webhook verification, and real-time delivery telemetry.
+The platform provides a scalable, enterprise multi-tenant messaging router with credential encryption, dynamic configuration schemas, templating engine, Valkey background queues, cryptographic webhook verification, real-time delivery telemetry, and official Meta WhatsApp Business Cloud API integration.
 
 #### Architecture Highlights
 1. **Global Provider Registry (`providers` table):**
-   - Seeded with 8 initial providers (`smtp`, `sendgrid`, `amazon-ses`, `mailgun`, `mailchimp-transactional`, `brevo`, `postmark`, `resend`).
-   - Fully operational adapters for **SMTP**, **SendGrid v3 REST API**, and pre-scaled SMTP providers (**Amazon SES**, **Mailgun**, **Mandrill**, **Brevo**, **Postmark**, and **Resend**).
+   - Seeded with 9 multi-channel providers (`smtp`, `sendgrid`, `amazon-ses`, `mailgun`, `mailchimp-transactional`, `brevo`, `postmark`, `resend`, and `whatsapp-cloud`).
+   - Fully operational adapters for **SMTP**, **SendGrid v3 REST API**, pre-scaled SMTP providers (**Amazon SES**, **Mailgun**, **Mandrill**, **Brevo**, **Postmark**, and **Resend**), and **Meta WhatsApp Business Cloud API**.
 2. **Multi-Tenant Encrypted Credentials (`user_provider_configurations` table):**
    - AES-256-GCM symmetric encryption with randomized 16-byte initialization vectors and auth tags.
-   - Plaintext credentials and secrets are stripped and masked before serialization to API responses.
+   - Plaintext credentials and secrets (API keys, Meta Access Tokens, App Secrets) are stripped and masked before serialization to API responses.
    - Per-user configuration isolation with default provider selection.
-3. **Template Engine (`email_templates` table):**
-   - Dynamic `{{variable}}` token extraction and handlebar interpolation for subjects and HTML bodies.
+3. **Template Engine & Variable Mapping:**
+   - Transactional email templates with dynamic `{{variable}}` token extraction and handlebar interpolation for subjects and HTML bodies.
+   - WhatsApp message templates with component parameter mapping, category tracking (MARKETING, UTILITY, AUTHENTICATION), and direct synchronization from Meta Graph API.
 4. **Valkey Background Queue & Exponential Backoff (`EmailQueueService` & `EmailWorkerService`):**
    - High-throughput asynchronous dispatching via Valkey atomic `LPUSH` / `RPOPLPUSH`.
    - Automatic retry handling with dead-letter queue (DLQ) support.
-5. **Dynamic Schema-Driven UI (`/admin/messaging`):**
-   - Reusable `ConnectProviderButton` and `ProviderSelectionModal` dynamically generated from database schemas.
-   - Real-time connection testing, interactive composer with template preview, and delivery logs.
-6. **Phase 2: Email Webhooks, Delivery Tracking & Event Deduplication (`MessagingWebhooksModule`):**
+5. **Phase 2: Email Webhooks, Delivery Tracking & Event Deduplication (`MessagingWebhooksModule`):**
    - **Dynamic Webhook Endpoints:** Dedicated endpoints generated per provider configuration (`/api/webhooks/messaging/email/{configuration-uuid}`).
    - **SendGrid Signed Event Webhooks:** Cryptographic ECDSA SHA-256 signature verification (`X-Twilio-Email-Event-Webhook-Signature` & `X-Twilio-Email-Event-Webhook-Timestamp`).
    - **Event Normalization & Deduplication:** Normalizes incoming provider batches into standard types (`DELIVERED`, `OPENED`, `CLICKED`, `BOUNCED`, `DROPPED`, `SPAM_REPORTED`, `UNSUBSCRIBED`, `FAILED`) with 24-hour Valkey atomic deduplication.
    - **Message Status Management:** Recipient-level isolation and message lifecycle updates without regressing terminal states.
    - **Engagement & Telemetry Analytics:** Dedicated message details timeline modal (inspecting exact event sequences, clicked URLs, and bounce causes) and aggregated 7-day time series charts.
+6. **Phase 3: Meta WhatsApp Business Platform (Cloud API):**
+   - **Official Cloud API Integration (`WhatsAppCloudApiAdapter`):** Direct communication with Meta Graph API `v21.0` using Phone Number ID and System User Permanent Access Tokens.
+   - **E.164 Phone Normalization:** Automatic formatting and validation of international destination numbers.
+   - **24-Hour Customer Service Session Window Enforcement:** Strict adherence to Meta policies. Direct free-form text and media messages are permitted only within an open 24-hour window from the user's last inbound message. When closed, approved Template Messages are required to re-initiate contact.
+   - **Cryptographic Webhook Handshake & Security:**
+     - `GET /api/webhooks/messaging/whatsapp/:configurationUuid`: Verifies `hub.mode === 'subscribe'` and `hub.verify_token`, responding with plain text `hub.challenge`.
+     - `POST /api/webhooks/messaging/whatsapp/:configurationUuid`: Cryptographic HMAC-SHA256 signature verification (`X-Hub-Signature-256`) against decrypted Meta App Secret.
+   - **Two-Way Real-Time Chat & Threading (`WhatsAppMessagingTab`):** Complete customer inbox with chronological chat history, delivery receipts (`sent`, `delivered`, `read`, `failed`), and dynamic template variable composer.
 
-#### Webhook Setup Instructions (SendGrid)
+#### Webhook Setup Instructions
+
+##### SendGrid Email Webhooks
 1. In your SendGrid Dashboard, navigate to **Settings → Mail Settings → Event Webhook**.
 2. Copy your unique dynamic webhook URL from `/admin/messaging` (**Webhooks & Events** tab).
 3. Paste the URL into SendGrid's **HTTP Post URL** field.
 4. Enable **Signed Event Webhook** and copy the **Verification Key**.
 5. Paste the verification key into the dashboard to verify incoming signatures cryptographically.
 
-#### API Endpoints (Messaging & Webhooks)
+##### Meta WhatsApp Webhooks
+1. In the **Meta App Dashboard**, navigate to **WhatsApp → Configuration → Webhook**.
+2. In the **Callback URL** field, paste your generated endpoint URL: `https://your-domain.com/api/webhooks/messaging/whatsapp/<configuration-uuid>`.
+3. In the **Verify Token** field, paste your configured Webhook Verify Token.
+4. Under **Webhook fields**, click **Manage** and subscribe to `messages`.
+5. Incoming replies, status deliveries (`sent`, `delivered`, `read`), and failure reasons will be verified via HMAC-SHA256 and reflected in real-time.
+
+#### API Endpoints (Messaging, Webhooks & WhatsApp)
 * `POST /api/webhooks/messaging/email/:configurationUuid`: Public webhook receiver for SendGrid/email providers.
+* `GET /api/webhooks/messaging/whatsapp/:configurationUuid`: Public Meta webhook verification handshake (`hub.challenge`).
+* `POST /api/webhooks/messaging/whatsapp/:configurationUuid`: Public Meta webhook event receiver (HMAC-SHA256 verified).
+* `GET /api/messaging/whatsapp/conversations`: List customer WhatsApp conversations with 24-hr session status.
+* `GET /api/messaging/whatsapp/conversations/:conversationUuid/messages`: Chronological conversation message history.
+* `POST /api/messaging/whatsapp/messages/send`: Send outbound WhatsApp message (Session text/media or Template).
+* `GET /api/messaging/whatsapp/session-check`: Validate 24-hour customer service window for a contact.
+* `GET /api/messaging/whatsapp/templates`: List synced message templates.
+* `POST /api/messaging/whatsapp/templates/sync/:configurationUuid`: Sync templates from Meta Graph API.
 * `GET /api/messaging/webhook-endpoints/:configurationUuid`: Retrieve or generate unique endpoint URL and setup guide.
 * `PUT /api/messaging/webhook-endpoints/:configurationUuid/secret`: Save verification public key / signing secret.
 * `PUT /api/messaging/webhook-endpoints/:configurationUuid/status`: Enable or disable a webhook endpoint.

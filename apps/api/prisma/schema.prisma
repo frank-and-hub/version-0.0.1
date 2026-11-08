@@ -43,6 +43,9 @@ model User {
   webhook_endpoints      ProviderWebhookEndpoint[]
   webhook_events         ProviderWebhookEvent[]
   message_events         MessageEvent[]
+  whatsapp_conversations WhatsAppConversation[]
+  whatsapp_messages      WhatsAppMessage[]
+  whatsapp_templates     WhatsAppTemplate[]
   created_at             DateTime           @default(now()) @map("created_at")
   updated_at             DateTime           @updatedAt @map("updated_at")
 
@@ -191,8 +194,10 @@ enum MessageSendingStatus {
   DRAFT
   QUEUED
   PROCESSING
+  SENT
   ACCEPTED
   DELIVERED
+  READ
   FAILED
   BOUNCED
   CANCELLED
@@ -232,7 +237,8 @@ model UserProviderConfiguration {
   type               MessagingChannel @default(EMAIL)
   credentials        String           // Encrypted JSON ciphertext with IV/tag
   sender_name        String           @map("sender_name")
-  sender_email       String           @map("sender_email")
+  sender_email       String?          @map("sender_email")
+  sender_phone       String?          @map("sender_phone")
   reply_to           String?          @map("reply_to")
   is_active          Boolean          @default(true) @map("is_active")
   is_verified        Boolean          @default(false) @map("is_verified")
@@ -246,6 +252,9 @@ model UserProviderConfiguration {
   webhook_endpoints  ProviderWebhookEndpoint[]
   webhook_events     ProviderWebhookEvent[]
   message_events     MessageEvent[]
+  whatsapp_conversations WhatsAppConversation[]
+  whatsapp_messages      WhatsAppMessage[]
+  whatsapp_templates     WhatsAppTemplate[]
 
   @@index([user_uuid])
   @@index([provider_uuid])
@@ -460,5 +469,112 @@ model MessageEvent {
   @@index([event_timestamp])
   @@map("message_events")
 }
+
+enum WhatsAppMessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum WhatsAppMessageType {
+  TEXT
+  IMAGE
+  DOCUMENT
+  AUDIO
+  VIDEO
+  TEMPLATE
+  LOCATION
+  INTERACTIVE
+}
+
+enum WhatsAppTemplateStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAUSED
+}
+
+model WhatsAppConversation {
+  conversation_uuid           String                    @id @default(uuid()) @map("conversation_uuid")
+  user_uuid                   String                    @map("user_uuid")
+  user                        User                      @relation(fields: [user_uuid], references: [user_uuid], onDelete: Cascade)
+  provider_configuration_uuid String                    @map("provider_configuration_uuid")
+  provider_configuration      UserProviderConfiguration @relation(fields: [provider_configuration_uuid], references: [configuration_uuid], onDelete: Cascade)
+  contact_phone               String                    @map("contact_phone")
+  contact_name                String?                   @map("contact_name")
+  last_message_at             DateTime?                 @map("last_message_at")
+  last_message_direction      WhatsAppMessageDirection? @map("last_message_direction")
+  window_expires_at           DateTime?                 @map("window_expires_at")
+  is_active                   Boolean                   @default(true) @map("is_active")
+  created_at                  DateTime                  @default(now()) @map("created_at")
+  updated_at                  DateTime                  @updatedAt @map("updated_at")
+  messages                    WhatsAppMessage[]
+
+  @@unique([provider_configuration_uuid, contact_phone])
+  @@index([user_uuid])
+  @@index([provider_configuration_uuid])
+  @@index([contact_phone])
+  @@index([last_message_at])
+  @@map("whatsapp_conversations")
+}
+
+model WhatsAppMessage {
+  message_uuid                String                    @id @default(uuid()) @map("message_uuid")
+  conversation_uuid           String                    @map("conversation_uuid")
+  conversation                WhatsAppConversation      @relation(fields: [conversation_uuid], references: [conversation_uuid], onDelete: Cascade)
+  user_uuid                   String                    @map("user_uuid")
+  user                        User                      @relation(fields: [user_uuid], references: [user_uuid], onDelete: Cascade)
+  provider_configuration_uuid String                    @map("provider_configuration_uuid")
+  provider_configuration      UserProviderConfiguration @relation(fields: [provider_configuration_uuid], references: [configuration_uuid], onDelete: Cascade)
+  direction                   WhatsAppMessageDirection  @default(OUTBOUND) @map("direction")
+  message_type                WhatsAppMessageType       @default(TEXT) @map("message_type")
+  provider_message_id         String?                   @unique @map("provider_message_id")
+  recipient_phone             String                    @map("recipient_phone")
+  sender_phone                String                    @map("sender_phone")
+  content                     String?                   @map("content")
+  media_url                   String?                   @map("media_url")
+  template_name               String?                   @map("template_name")
+  template_variables          Json?                     @default("{}") @map("template_variables")
+  status                      MessageSendingStatus      @default(QUEUED) @map("status")
+  error_code                  String?                   @map("error_code")
+  error_message               String?                   @map("error_message")
+  sent_at                     DateTime?                 @map("sent_at")
+  delivered_at                DateTime?                 @map("delivered_at")
+  read_at                     DateTime?                 @map("read_at")
+  metadata                    Json?                     @default("{}") @map("metadata")
+  created_at                  DateTime                  @default(now()) @map("created_at")
+  updated_at                  DateTime                  @updatedAt @map("updated_at")
+
+  @@index([conversation_uuid])
+  @@index([user_uuid])
+  @@index([provider_configuration_uuid])
+  @@index([provider_message_id])
+  @@index([direction])
+  @@index([status])
+  @@index([created_at])
+  @@map("whatsapp_messages")
+}
+
+model WhatsAppTemplate {
+  template_uuid               String                    @id @default(uuid()) @map("template_uuid")
+  user_uuid                   String                    @map("user_uuid")
+  user                        User                      @relation(fields: [user_uuid], references: [user_uuid], onDelete: Cascade)
+  provider_configuration_uuid String                    @map("provider_configuration_uuid")
+  provider_configuration      UserProviderConfiguration @relation(fields: [provider_configuration_uuid], references: [configuration_uuid], onDelete: Cascade)
+  meta_template_id            String?                   @map("meta_template_id")
+  name                        String                    @map("name")
+  language                    String                    @default("en_US") @map("language")
+  category                    String                    @default("MARKETING") @map("category")
+  status                      WhatsAppTemplateStatus    @default(APPROVED) @map("status")
+  components                  Json                      @default("[]") @map("components")
+  created_at                  DateTime                  @default(now()) @map("created_at")
+  updated_at                  DateTime                  @updatedAt @map("updated_at")
+
+  @@unique([provider_configuration_uuid, name, language])
+  @@index([user_uuid])
+  @@index([provider_configuration_uuid])
+  @@index([name])
+  @@map("whatsapp_templates")
+}
+
 
 

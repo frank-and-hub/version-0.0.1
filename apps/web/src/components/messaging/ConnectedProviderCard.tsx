@@ -79,7 +79,12 @@ export const ConnectedProviderCard: React.FC<ConnectedProviderCardProps> = ({
           <div className="flex items-center justify-between">
             <span className="text-slate-400 font-medium">Sender:</span>
             <span className="font-semibold text-slate-700 dark:text-slate-200">
-              {configuration.sender_name} &lt;{configuration.sender_email}&gt;
+              {configuration.sender_name}{" "}
+              {configuration.sender_phone
+                ? `(${configuration.sender_phone})`
+                : configuration.sender_email
+                  ? `<${configuration.sender_email}>`
+                  : ""}
             </span>
           </div>
           {configuration.reply_to && (
