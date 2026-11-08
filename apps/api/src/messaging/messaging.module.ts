@@ -12,8 +12,10 @@ import { EmailSendingService } from './services/email-sending.service';
 import { EmailWorkerService } from './services/email-worker.service';
 import { MessagingController } from './messaging.controller';
 
+import { MessagingWebhooksModule } from './webhooks/messaging-webhooks.module';
+
 @Module({
-  imports: [PrismaModule, ValkeyModule],
+  imports: [PrismaModule, ValkeyModule, MessagingWebhooksModule],
   controllers: [MessagingController],
   providers: [
     SmtpEmailProvider,

@@ -111,7 +111,7 @@ export function DataTable<T>({
       )}
 
       {/* Main Table Container */}
-      <div className="relative overflow-x-auto thin-scroll min-h-[300px]">
+      <div className="relative overflow-x-auto min-h-[300px]">
         <table className="w-full text-left border-collapse text-sm">
           {/* Header */}
           <thead>

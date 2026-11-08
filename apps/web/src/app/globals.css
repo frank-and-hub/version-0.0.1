@@ -22,9 +22,10 @@ body {
   backdrop-filter: blur(1rem);
   -webkit-backdrop-filter: blur(1rem) !important;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+  scrollbar-width: none;
 }
 
-.thin-scroll {
+html, div, nav, section, article, aside, header, footer {
   scrollbar-width: none;
 }
 
@@ -53,6 +54,12 @@ select {
   will-change: transform, backdrop-filter;
   backdrop-filter: blur(8px);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2)
+}
+
+.rounded-full {
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%) !important;
+  box-shadow: 7px 6px 5px rgba(0, 0, 0, 0.12);
 }
 
 input::placeholder,

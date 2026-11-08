@@ -189,7 +189,7 @@ export default function AdminProfilePage() {
                 Active Permissions
               </h4>
             </div>
-            <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto thin-scroll">
+            <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
               {user?.permissions && user.permissions.length > 0 ? (
                 user.permissions.map((perm) => (
                   <span

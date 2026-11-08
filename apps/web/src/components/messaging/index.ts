@@ -6,3 +6,6 @@ export * from './DynamicProviderForm';
 export * from './ProviderSelectionModal';
 export * from './ProviderConnectionStatus';
 export * from './ConnectedProviderCard';
+export * from './WebhookManagerTab';
+export * from './EmailMessageDetailsModal';
+export * from './EmailAnalyticsDashboardTab';

@@ -1,17 +1,20 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { Input } from '@/components/ui/Input';
-import { api } from '@/lib/api';
+import React, { useState, useEffect } from "react";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Input } from "@/components/ui/Input";
+import { api } from "@/lib/api";
 import {
   ConnectProviderButton,
   ProviderSelectionModal,
   ConnectedProviderCard,
   UserProviderConfiguration,
-} from '@/components/messaging';
+  WebhookManagerTab,
+  EmailMessageDetailsModal,
+  EmailAnalyticsDashboardTab,
+} from "@/components/messaging";
 import {
   Mail,
   Send,
@@ -27,7 +30,11 @@ import {
   Trash2,
   Star,
   Settings,
-} from 'lucide-react';
+  Webhook,
+  TrendingUp,
+  Eye,
+  X,
+} from "lucide-react";
 
 interface EmailTemplate {
   template_uuid: string;
@@ -61,37 +68,54 @@ interface EmailMessage {
 }
 
 export default function MessagingPage() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'providers' | 'templates' | 'compose' | 'history'>('overview');
+  const [activeTab, setActiveTab] = useState<
+    | "overview"
+    | "providers"
+    | "webhooks"
+    | "analytics"
+    | "templates"
+    | "compose"
+    | "history"
+  >("overview");
+  const [selectedInspectMessageUuid, setSelectedInspectMessageUuid] = useState<
+    string | null
+  >(null);
   const [stats, setStats] = useState<any>(null);
-  const [configurations, setConfigurations] = useState<UserProviderConfiguration[]>([]);
+  const [configurations, setConfigurations] = useState<
+    UserProviderConfiguration[]
+  >([]);
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [messages, setMessages] = useState<EmailMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   // Unified Connect Provider Modal State
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
-  const [editingConfig, setEditingConfig] = useState<UserProviderConfiguration | null>(null);
+  const [editingConfig, setEditingConfig] =
+    useState<UserProviderConfiguration | null>(null);
 
   // Template Modal state
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [templateForm, setTemplateForm] = useState({
-    name: '',
-    description: '',
-    subject: '',
-    html_content: '',
-    text_content: '',
+    name: "",
+    description: "",
+    subject: "",
+    html_content: "",
+    text_content: "",
   });
 
   // Compose State
   const [composeForm, setComposeForm] = useState({
-    provider_configuration_uuid: '',
-    template_uuid: '',
-    recipients: '',
-    subject: '',
-    html_content: '',
-    text_content: '',
+    provider_configuration_uuid: "",
+    template_uuid: "",
+    recipients: "",
+    subject: "",
+    html_content: "",
+    text_content: "",
     send_async: true,
   });
 
@@ -99,18 +123,22 @@ export default function MessagingPage() {
     setIsLoading(true);
     try {
       const [statsRes, configRes, tempRes, histRes] = await Promise.allSettled([
-        api.get('/messaging/stats'),
-        api.get('/messaging/provider-configurations?type=EMAIL'),
-        api.get('/messaging/templates'),
-        api.get('/messaging/emails?limit=50'),
+        api.get("/messaging/stats"),
+        api.get("/messaging/provider-configurations?type=EMAIL"),
+        api.get("/messaging/templates"),
+        api.get("/messaging/emails?limit=50"),
       ]);
 
-      if (statsRes.status === 'fulfilled') setStats((statsRes.value as any)?.data);
-      if (configRes.status === 'fulfilled') setConfigurations((configRes.value as any)?.data || []);
-      if (tempRes.status === 'fulfilled') setTemplates((tempRes.value as any)?.data || []);
-      if (histRes.status === 'fulfilled') setMessages((histRes.value as any)?.data?.items || []);
+      if (statsRes.status === "fulfilled")
+        setStats((statsRes.value as any)?.data);
+      if (configRes.status === "fulfilled")
+        setConfigurations((configRes.value as any)?.data || []);
+      if (tempRes.status === "fulfilled")
+        setTemplates((tempRes.value as any)?.data || []);
+      if (histRes.status === "fulfilled")
+        setMessages((histRes.value as any)?.data?.items || []);
     } catch (err: any) {
-      console.error('Error fetching messaging state:', err);
+      console.error("Error fetching messaging state:", err);
     } finally {
       setIsLoading(false);
     }
@@ -134,17 +162,28 @@ export default function MessagingPage() {
     setActionLoading(`test_${configUuid}`);
     setFeedback(null);
     try {
-      const res = (await api.post(`/messaging/configurations/${configUuid}/test`)) as any;
+      const res = (await api.post(
+        `/messaging/configurations/${configUuid}/test`,
+      )) as any;
       if (res.data?.success) {
-        setFeedback({ type: 'success', message: res.data?.message || 'Connection test succeeded!' });
+        setFeedback({
+          type: "success",
+          message: res.data?.message || "Connection test succeeded!",
+        });
       } else {
-        setFeedback({ type: 'error', message: res.data?.message || 'Connection test failed.' });
+        setFeedback({
+          type: "error",
+          message: res.data?.message || "Connection test failed.",
+        });
       }
       await loadData();
     } catch (err: any) {
       setFeedback({
-        type: 'error',
-        message: err?.response?.data?.message || err?.message || 'Connection test failed',
+        type: "error",
+        message:
+          err?.response?.data?.message ||
+          err?.message ||
+          "Connection test failed",
       });
     } finally {
       setActionLoading(null);
@@ -154,25 +193,39 @@ export default function MessagingPage() {
   const handleSetDefault = async (configUuid: string) => {
     setActionLoading(`default_${configUuid}`);
     try {
-      await api.patch(`/messaging/provider-configurations/${configUuid}/default`);
-      setFeedback({ type: 'success', message: 'Default email provider updated' });
+      await api.patch(
+        `/messaging/provider-configurations/${configUuid}/default`,
+      );
+      setFeedback({
+        type: "success",
+        message: "Default email provider updated",
+      });
       await loadData();
     } catch (err: any) {
-      setFeedback({ type: 'error', message: 'Failed to set default configuration' });
+      setFeedback({
+        type: "error",
+        message: "Failed to set default configuration",
+      });
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleDeleteConfig = async (configUuid: string) => {
-    if (!confirm('Are you sure you want to delete this provider configuration?')) return;
+    if (
+      !confirm("Are you sure you want to delete this provider configuration?")
+    )
+      return;
     setActionLoading(`del_${configUuid}`);
     try {
       await api.delete(`/messaging/provider-configurations/${configUuid}`);
-      setFeedback({ type: 'success', message: 'Configuration deleted successfully' });
+      setFeedback({
+        type: "success",
+        message: "Configuration deleted successfully",
+      });
       await loadData();
     } catch (err: any) {
-      setFeedback({ type: 'error', message: 'Failed to delete configuration' });
+      setFeedback({ type: "error", message: "Failed to delete configuration" });
     } finally {
       setActionLoading(null);
     }
@@ -180,15 +233,24 @@ export default function MessagingPage() {
 
   const handleSaveTemplate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setActionLoading('save_template');
+    setActionLoading("save_template");
     try {
-      await api.post('/messaging/templates', templateForm);
-      setFeedback({ type: 'success', message: 'Template saved successfully!' });
+      await api.post("/messaging/templates", templateForm);
+      setFeedback({ type: "success", message: "Template saved successfully!" });
       setIsTemplateModalOpen(false);
-      setTemplateForm({ name: '', description: '', subject: '', html_content: '', text_content: '' });
+      setTemplateForm({
+        name: "",
+        description: "",
+        subject: "",
+        html_content: "",
+        text_content: "",
+      });
       await loadData();
     } catch (err: any) {
-      setFeedback({ type: 'error', message: err?.response?.data?.message || 'Failed to save template' });
+      setFeedback({
+        type: "error",
+        message: err?.response?.data?.message || "Failed to save template",
+      });
     } finally {
       setActionLoading(null);
     }
@@ -196,17 +258,17 @@ export default function MessagingPage() {
 
   const handleSendEmail = async (e: React.FormEvent) => {
     e.preventDefault();
-    setActionLoading('send_email');
+    setActionLoading("send_email");
     setFeedback(null);
     try {
       const recipientEmails = composeForm.recipients
         .split(/[,;\n]/)
         .map((r) => r.trim())
         .filter(Boolean)
-        .map((email) => ({ email, type: 'TO' }));
+        .map((email) => ({ email, type: "TO" }));
 
       if (recipientEmails.length === 0) {
-        throw new Error('Please enter at least one recipient email address');
+        throw new Error("Please enter at least one recipient email address");
       }
 
       const payload: any = {
@@ -218,31 +280,35 @@ export default function MessagingPage() {
       };
 
       if (composeForm.provider_configuration_uuid) {
-        payload.provider_configuration_uuid = composeForm.provider_configuration_uuid;
+        payload.provider_configuration_uuid =
+          composeForm.provider_configuration_uuid;
       }
       if (composeForm.template_uuid) {
         payload.template_uuid = composeForm.template_uuid;
       }
 
-      const res = (await api.post('/messaging/emails/send', payload)) as any;
+      const res = (await api.post("/messaging/emails/send", payload)) as any;
       setFeedback({
-        type: 'success',
-        message: res.data?.message || 'Email successfully dispatched / queued!',
+        type: "success",
+        message: res.data?.message || "Email successfully dispatched / queued!",
       });
       setComposeForm({
-        provider_configuration_uuid: '',
-        template_uuid: '',
-        recipients: '',
-        subject: '',
-        html_content: '',
-        text_content: '',
+        provider_configuration_uuid: "",
+        template_uuid: "",
+        recipients: "",
+        subject: "",
+        html_content: "",
+        text_content: "",
         send_async: true,
       });
       await loadData();
     } catch (err: any) {
       setFeedback({
-        type: 'error',
-        message: err?.response?.data?.message || err?.message || 'Failed to dispatch email',
+        type: "error",
+        message:
+          err?.response?.data?.message ||
+          err?.message ||
+          "Failed to dispatch email",
       });
     } finally {
       setActionLoading(null);
@@ -258,10 +324,11 @@ export default function MessagingPage() {
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
               Multi-Provider Messaging Platform
             </h1>
-            <Badge variant="indigo">Phase 1: Email</Badge>
+            <Badge variant="indigo">Phase 1 & 2: Email + Webhooks</Badge>
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Unified dynamic email provider connection with AES-256-GCM encryption, Valkey queues, and templates.
+            Unified dynamic email provider connection with AES-256-GCM
+            encryption, Valkey queues, and templates.
           </p>
         </div>
 
@@ -274,11 +341,13 @@ export default function MessagingPage() {
             disabled={isLoading}
             className="flex items-center gap-1.5"
           >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
+            />
             <span className="hidden sm:inline">Refresh</span>
           </Button>
 
-          <ConnectProviderButton onClick={openConnectModal} size="sm" />
+          {/* <ConnectProviderButton onClick={openConnectModal} size="sm" /> */}
         </div>
       </div>
 
@@ -286,13 +355,13 @@ export default function MessagingPage() {
       {feedback && (
         <div
           className={`p-4 rounded-xl flex items-center justify-between gap-3 text-sm font-medium ${
-            feedback.type === 'success'
-              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
-              : 'bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
+            feedback.type === "success"
+              ? "bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+              : "bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
           }`}
         >
           <div className="flex items-center gap-2">
-            {feedback.type === 'success' ? (
+            {feedback.type === "success" ? (
               <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
             ) : (
               <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-600 dark:text-rose-400" />
@@ -308,36 +377,41 @@ export default function MessagingPage() {
         </div>
       )}
 
-      {/* Navigation Tabs */}
-      <div className="flex border-b border-slate-200 dark:border-slate-800 space-x-1 sm:space-x-4">
-        {[
-          { id: 'overview', label: 'Overview & Stats', icon: Server },
-          { id: 'providers', label: 'Email Providers', icon: Key },
-          { id: 'templates', label: 'Templates', icon: FileText },
-          { id: 'compose', label: 'Compose & Send', icon: Send },
-          { id: 'history', label: 'Delivery History', icon: Clock },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 py-3 px-3 sm:px-4 text-xs sm:text-sm font-semibold border-b-2 transition-all ${
-                isActive
-                  ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
+      {/* Navigation Tabs (Pill / Segmented Controls - No Horizontal Scroll) */}
+      <div className="bg-slate-100/80 dark:bg-slate-900/80 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-800">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5">
+          {[
+            { id: "overview", label: "Overview", icon: Server },
+            { id: "providers", label: "Providers", icon: Key },
+            { id: "webhooks", label: "Webhooks", icon: Webhook },
+            { id: "analytics", label: "Analytics", icon: TrendingUp },
+            { id: "templates", label: "Templates", icon: FileText },
+            { id: "compose", label: "Compose", icon: Send },
+            { id: "history", label: "History", icon: Clock },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all duration-150 ${
+                  isActive
+                    ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm font-bold ring-1 ring-slate-200/60 dark:ring-slate-700"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800/50 shadow-none"
+                }`}
+              >
+                <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-indigo-600 dark:text-indigo-400" : "text-slate-500"}`} />
+                <span className="truncate">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* TAB 1: OVERVIEW */}
-      {activeTab === 'overview' && (
+      {activeTab === "overview" && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="p-5 flex items-center gap-4">
@@ -345,7 +419,9 @@ export default function MessagingPage() {
                 <Mail className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase">Total Emails Sent</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase">
+                  Total Emails Sent
+                </p>
                 <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
                   {stats?.total ?? 0}
                 </h3>
@@ -357,7 +433,9 @@ export default function MessagingPage() {
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase">Delivered / Accepted</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase">
+                  Delivered / Accepted
+                </p>
                 <div className="flex items-baseline gap-2 mt-1">
                   <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
                     {stats?.delivered ?? 0}
@@ -374,7 +452,9 @@ export default function MessagingPage() {
                 <Clock className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase">Valkey Queue Waiting</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase">
+                  Valkey Queue Waiting
+                </p>
                 <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
                   {stats?.queue?.waiting ?? 0}
                 </h3>
@@ -386,7 +466,9 @@ export default function MessagingPage() {
                 <XCircle className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase">Failed Deliveries</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase">
+                  Failed Deliveries
+                </p>
                 <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
                   {stats?.failed ?? 0}
                 </h3>
@@ -402,11 +484,12 @@ export default function MessagingPage() {
                   Connected Email Providers
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Manage your verified SMTP servers and SendGrid API integrations
+                  Manage your verified SMTP servers and SendGrid API
+                  integrations
                 </p>
               </div>
 
-              <ConnectProviderButton onClick={openConnectModal} size="sm" />
+              {/* <ConnectProviderButton onClick={openConnectModal} size="sm" /> */}
             </div>
 
             {configurations.length === 0 ? (
@@ -419,7 +502,8 @@ export default function MessagingPage() {
                     No Email Providers Connected
                   </h4>
                   <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-                    Connect your SMTP server or SendGrid account with a single click to enable outbound notifications.
+                    Connect your SMTP server or SendGrid account with a single
+                    click to enable outbound notifications.
                   </p>
                 </div>
                 <ConnectProviderButton onClick={openConnectModal} size="sm" />
@@ -434,7 +518,9 @@ export default function MessagingPage() {
                     onTest={handleTestConnection}
                     onSetDefault={handleSetDefault}
                     onDelete={handleDeleteConfig}
-                    isActionLoading={actionLoading?.includes(config.configuration_uuid)}
+                    isActionLoading={actionLoading?.includes(
+                      config.configuration_uuid,
+                    )}
                   />
                 ))}
               </div>
@@ -444,7 +530,7 @@ export default function MessagingPage() {
       )}
 
       {/* TAB 2: PROVIDERS CATALOG / MANAGER */}
-      {activeTab === 'providers' && (
+      {activeTab === "providers" && (
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
@@ -452,11 +538,12 @@ export default function MessagingPage() {
                 Email Provider Connections
               </h3>
               <p className="text-xs text-slate-500">
-                Add and manage multi-tenant SMTP and SendGrid API credentials with zero plaintext exposure.
+                Add and manage multi-tenant SMTP and SendGrid API credentials
+                with zero plaintext exposure.
               </p>
             </div>
 
-            <ConnectProviderButton onClick={openConnectModal} size="sm" />
+            {/* <ConnectProviderButton onClick={openConnectModal} size="sm" /> */}
           </div>
 
           {/* Cards for configured providers */}
@@ -470,7 +557,9 @@ export default function MessagingPage() {
                   onTest={handleTestConnection}
                   onSetDefault={handleSetDefault}
                   onDelete={handleDeleteConfig}
-                  isActionLoading={actionLoading?.includes(config.configuration_uuid)}
+                  isActionLoading={actionLoading?.includes(
+                    config.configuration_uuid,
+                  )}
                 />
               ))}
             </div>
@@ -479,7 +568,8 @@ export default function MessagingPage() {
           {configurations.length === 0 && (
             <Card className="p-8 text-center space-y-3">
               <p className="text-sm text-slate-500">
-                No active provider configurations found. Click below to connect your first provider.
+                No active provider configurations found. Click below to connect
+                your first provider.
               </p>
               <ConnectProviderButton onClick={openConnectModal} />
             </Card>
@@ -487,37 +577,63 @@ export default function MessagingPage() {
         </div>
       )}
 
-      {/* TAB 3: TEMPLATES */}
-      {activeTab === 'templates' && (
+      {/* TAB: WEBHOOKS & DELIVERY EVENTS */}
+      {activeTab === "webhooks" && (
+        <WebhookManagerTab configurations={configurations} />
+      )}
+
+      {/* TAB: ENGAGEMENT ANALYTICS DASHBOARD */}
+      {activeTab === "analytics" && (
+        <EmailAnalyticsDashboardTab configurations={configurations} />
+      )}
+
+      {/* TAB: TEMPLATES */}
+      {activeTab === "templates" && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Email Templates</h3>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                Email Templates
+              </h3>
               <p className="text-xs text-slate-500">
-                Manage reusable dynamic transactional email templates with variable placeholders
+                Manage reusable dynamic transactional email templates with
+                variable placeholders
               </p>
             </div>
-            <Button size="sm" variant="primary" onClick={() => setIsTemplateModalOpen(true)}>
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => setIsTemplateModalOpen(true)}
+            >
               <Plus className="w-4 h-4 mr-1" /> New Template
             </Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {templates.map((tpl) => (
-              <Card key={tpl.template_uuid} className="p-5 flex flex-col justify-between">
+              <Card
+                key={tpl.template_uuid}
+                className="p-5 flex flex-col justify-between"
+              >
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">{tpl.name}</h4>
-                    <Badge variant={tpl.is_active ? 'success' : 'default'}>
-                      {tpl.is_active ? 'Active' : 'Draft'}
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                      {tpl.name}
+                    </h4>
+                    <Badge variant={tpl.is_active ? "success" : "default"}>
+                      {tpl.is_active ? "Active" : "Draft"}
                     </Badge>
                   </div>
                   <p className="text-xs text-slate-500 mb-3 line-clamp-2">
-                    {tpl.description || 'Transactional notification template.'}
+                    {tpl.description || "Transactional notification template."}
                   </p>
                   <div className="bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-lg text-[11px] mb-3">
-                    <span className="font-semibold text-slate-500">Subject: </span>
-                    <span className="text-slate-800 dark:text-slate-200">{tpl.subject}</span>
+                    <span className="font-semibold text-slate-500">
+                      Subject:{" "}
+                    </span>
+                    <span className="text-slate-800 dark:text-slate-200">
+                      {tpl.subject}
+                    </span>
                   </div>
 
                   {Array.isArray(tpl.variables) && tpl.variables.length > 0 && (
@@ -543,7 +659,7 @@ export default function MessagingPage() {
                         subject: tpl.subject,
                         html_content: tpl.html_content,
                       }));
-                      setActiveTab('compose');
+                      setActiveTab("compose");
                     }}
                     className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
                   >
@@ -557,14 +673,15 @@ export default function MessagingPage() {
       )}
 
       {/* TAB 4: COMPOSE & SEND */}
-      {activeTab === 'compose' && (
+      {activeTab === "compose" && (
         <Card className="p-6 max-w-4xl mx-auto">
           <div className="mb-6">
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
               Send Email Message
             </h3>
             <p className="text-xs text-slate-500">
-              Deliver emails immediately or background queue via Valkey with automatic exponential backoff
+              Deliver emails immediately or background queue via Valkey with
+              automatic exponential backoff
             </p>
           </div>
 
@@ -578,13 +695,20 @@ export default function MessagingPage() {
                   className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   value={composeForm.provider_configuration_uuid}
                   onChange={(e) =>
-                    setComposeForm({ ...composeForm, provider_configuration_uuid: e.target.value })
+                    setComposeForm({
+                      ...composeForm,
+                      provider_configuration_uuid: e.target.value,
+                    })
                   }
                 >
                   <option value="">Default Provider (Auto-resolved)</option>
                   {configurations.map((c) => (
-                    <option key={c.configuration_uuid} value={c.configuration_uuid}>
-                      {c.configuration_name} ({c.provider.name}) {c.is_default ? '★ Default' : ''}
+                    <option
+                      key={c.configuration_uuid}
+                      value={c.configuration_uuid}
+                    >
+                      {c.configuration_name} ({c.provider.name}){" "}
+                      {c.is_default ? "★ Default" : ""}
                     </option>
                   ))}
                 </select>
@@ -598,12 +722,16 @@ export default function MessagingPage() {
                   className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   value={composeForm.template_uuid}
                   onChange={(e) => {
-                    const tpl = templates.find((t) => t.template_uuid === e.target.value);
+                    const tpl = templates.find(
+                      (t) => t.template_uuid === e.target.value,
+                    );
                     setComposeForm({
                       ...composeForm,
                       template_uuid: e.target.value,
                       subject: tpl ? tpl.subject : composeForm.subject,
-                      html_content: tpl ? tpl.html_content : composeForm.html_content,
+                      html_content: tpl
+                        ? tpl.html_content
+                        : composeForm.html_content,
                     });
                   }}
                 >
@@ -622,7 +750,9 @@ export default function MessagingPage() {
                 label="Recipients (Comma or line separated)"
                 placeholder="alice@example.com, bob@example.com"
                 value={composeForm.recipients}
-                onChange={(e) => setComposeForm({ ...composeForm, recipients: e.target.value })}
+                onChange={(e) =>
+                  setComposeForm({ ...composeForm, recipients: e.target.value })
+                }
                 required
               />
             </div>
@@ -632,7 +762,9 @@ export default function MessagingPage() {
                 label="Subject Line"
                 placeholder="Important: Update on your account"
                 value={composeForm.subject}
-                onChange={(e) => setComposeForm({ ...composeForm, subject: e.target.value })}
+                onChange={(e) =>
+                  setComposeForm({ ...composeForm, subject: e.target.value })
+                }
                 required
               />
             </div>
@@ -646,7 +778,12 @@ export default function MessagingPage() {
                 className="w-full px-3 py-2 text-xs font-mono border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="<p>Hello world! This is a transactional notification.</p>"
                 value={composeForm.html_content}
-                onChange={(e) => setComposeForm({ ...composeForm, html_content: e.target.value })}
+                onChange={(e) =>
+                  setComposeForm({
+                    ...composeForm,
+                    html_content: e.target.value,
+                  })
+                }
                 required
               />
             </div>
@@ -656,11 +793,20 @@ export default function MessagingPage() {
                 type="checkbox"
                 id="sendAsync"
                 checked={composeForm.send_async}
-                onChange={(e) => setComposeForm({ ...composeForm, send_async: e.target.checked })}
+                onChange={(e) =>
+                  setComposeForm({
+                    ...composeForm,
+                    send_async: e.target.checked,
+                  })
+                }
                 className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
               />
-              <label htmlFor="sendAsync" className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                Send asynchronously via Valkey background queue (recommended for high throughput)
+              <label
+                htmlFor="sendAsync"
+                className="text-xs font-medium text-slate-700 dark:text-slate-300"
+              >
+                Send asynchronously via Valkey background queue (recommended for
+                high throughput)
               </label>
             </div>
 
@@ -668,11 +814,13 @@ export default function MessagingPage() {
               <Button
                 type="submit"
                 variant="primary"
-                disabled={actionLoading === 'send_email'}
+                disabled={actionLoading === "send_email"}
                 className="flex items-center gap-1.5"
               >
                 <Send className="w-4 h-4" />
-                {actionLoading === 'send_email' ? 'Dispatching...' : 'Send Message'}
+                {actionLoading === "send_email"
+                  ? "Dispatching..."
+                  : "Send Message"}
               </Button>
             </div>
           </form>
@@ -680,12 +828,16 @@ export default function MessagingPage() {
       )}
 
       {/* TAB 5: DELIVERY HISTORY */}
-      {activeTab === 'history' && (
+      {activeTab === "history" && (
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Email Delivery Log</h3>
-              <p className="text-xs text-slate-500">Audit trail of all dispatched and queued email messages</p>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                Email Delivery Log
+              </h3>
+              <p className="text-xs text-slate-500">
+                Audit trail of all dispatched and queued email messages
+              </p>
             </div>
             <Button size="sm" variant="outline" onClick={loadData}>
               <RefreshCw className="w-4 h-4 mr-1" /> Reload
@@ -693,7 +845,9 @@ export default function MessagingPage() {
           </div>
 
           {messages.length === 0 ? (
-            <p className="text-xs text-slate-400 py-8 text-center">No email delivery history found.</p>
+            <p className="text-xs text-slate-400 py-8 text-center">
+              No email delivery history found.
+            </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
@@ -705,18 +859,25 @@ export default function MessagingPage() {
                     <th className="px-4 py-3">Status</th>
                     <th className="px-4 py-3">Timestamp</th>
                     <th className="px-4 py-3">Provider Message ID / Error</th>
+                    <th className="px-4 py-3 text-right">Details</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {messages.map((m) => (
-                    <tr key={m.message_uuid} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
+                    <tr
+                      key={m.message_uuid}
+                      className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50"
+                    >
                       <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">
                         {m.subject}
                       </td>
                       <td className="px-4 py-3">
                         <div className="space-y-0.5">
                           {m.recipients.map((r, i) => (
-                            <div key={i} className="text-slate-600 dark:text-slate-300 font-mono text-[11px]">
+                            <div
+                              key={i}
+                              className="text-slate-600 dark:text-slate-300 font-mono text-[11px]"
+                            >
                               {r.email}
                             </div>
                           ))}
@@ -724,17 +885,17 @@ export default function MessagingPage() {
                       </td>
                       <td className="px-4 py-3">
                         <span className="font-semibold text-slate-700 dark:text-slate-300">
-                          {m.provider?.name || 'SMTP'}
+                          {m.provider?.name || "SMTP"}
                         </span>
                       </td>
                       <td className="px-4 py-3">
                         <Badge
                           variant={
-                            m.status === 'ACCEPTED' || m.status === 'DELIVERED'
-                              ? 'success'
-                              : m.status === 'FAILED'
-                              ? 'danger'
-                              : 'warning'
+                            m.status === "ACCEPTED" || m.status === "DELIVERED"
+                              ? "success"
+                              : m.status === "FAILED"
+                                ? "danger"
+                                : "warning"
                           }
                         >
                           {m.status}
@@ -745,10 +906,24 @@ export default function MessagingPage() {
                       </td>
                       <td className="px-4 py-3 font-mono text-[11px] text-slate-500 max-w-xs truncate">
                         {m.last_error ? (
-                          <span className="text-rose-600 font-sans">{m.last_error}</span>
+                          <span className="text-rose-600 font-sans">
+                            {m.last_error}
+                          </span>
                         ) : (
-                          m.provider_message_id || '—'
+                          m.provider_message_id || "—"
                         )}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            setSelectedInspectMessageUuid(m.message_uuid)
+                          }
+                          className="px-2 py-1 text-[11px]"
+                        >
+                          Inspect
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -770,13 +945,19 @@ export default function MessagingPage() {
         channel="EMAIL"
         onSuccess={(saved) => {
           setFeedback({
-            type: 'success',
+            type: "success",
             message: editingConfig
-              ? 'Provider configuration updated successfully!'
-              : 'Provider connected and credentials encrypted successfully!',
+              ? "Provider configuration updated successfully!"
+              : "Provider connected and credentials encrypted successfully!",
           });
           loadData();
         }}
+      />
+
+      {/* DETAILED MESSAGE & TIMELINE INSPECTOR MODAL */}
+      <EmailMessageDetailsModal
+        messageUuid={selectedInspectMessageUuid}
+        onClose={() => setSelectedInspectMessageUuid(null)}
       />
 
       {/* TEMPLATE CREATION MODAL */}
@@ -784,12 +965,14 @@ export default function MessagingPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Create Email Template</h3>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                Create Email Template
+              </h3>
               <button
                 onClick={() => setIsTemplateModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -798,7 +981,9 @@ export default function MessagingPage() {
                 label="Template Name"
                 placeholder="User Password Reset"
                 value={templateForm.name}
-                onChange={(e) => setTemplateForm({ ...templateForm, name: e.target.value })}
+                onChange={(e) =>
+                  setTemplateForm({ ...templateForm, name: e.target.value })
+                }
                 required
               />
 
@@ -806,37 +991,60 @@ export default function MessagingPage() {
                 label="Description"
                 placeholder="Sent when user requests a new password token"
                 value={templateForm.description}
-                onChange={(e) => setTemplateForm({ ...templateForm, description: e.target.value })}
+                onChange={(e) =>
+                  setTemplateForm({
+                    ...templateForm,
+                    description: e.target.value,
+                  })
+                }
               />
 
               <Input
                 label="Subject Line (use {{variable}})"
                 placeholder="Reset your {{company_name}} account password"
                 value={templateForm.subject}
-                onChange={(e) => setTemplateForm({ ...templateForm, subject: e.target.value })}
+                onChange={(e) =>
+                  setTemplateForm({ ...templateForm, subject: e.target.value })
+                }
                 required
               />
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                  HTML Body (supports &#123;&#123;variable&#125;&#125; placeholders)
+                  HTML Body (supports &#123;&#123;variable&#125;&#125;
+                  placeholders)
                 </label>
                 <textarea
                   rows={6}
                   className="w-full px-3 py-2 text-xs font-mono border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   placeholder="<p>Hi {{first_name}}, please use this code: <b>{{token}}</b></p>"
                   value={templateForm.html_content}
-                  onChange={(e) => setTemplateForm({ ...templateForm, html_content: e.target.value })}
+                  onChange={(e) =>
+                    setTemplateForm({
+                      ...templateForm,
+                      html_content: e.target.value,
+                    })
+                  }
                   required
                 />
               </div>
 
               <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
-                <Button variant="outline" type="button" onClick={() => setIsTemplateModalOpen(false)}>
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() => setIsTemplateModalOpen(false)}
+                >
                   Cancel
                 </Button>
-                <Button variant="primary" type="submit" disabled={actionLoading === 'save_template'}>
-                  {actionLoading === 'save_template' ? 'Saving...' : 'Create Template'}
+                <Button
+                  variant="primary"
+                  type="submit"
+                  disabled={actionLoading === "save_template"}
+                >
+                  {actionLoading === "save_template"
+                    ? "Saving..."
+                    : "Create Template"}
                 </Button>
               </div>
             </form>

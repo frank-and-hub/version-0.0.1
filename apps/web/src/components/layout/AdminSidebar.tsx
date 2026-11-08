@@ -142,7 +142,7 @@ export function AdminSidebar({
       </div>
 
       {/* Navigation List */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1 thin-scroll">
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         {isLoading ? (
           <div className="space-y-2 px-2">
             {[1, 2, 3, 4, 5, 6].map((i) => (

@@ -410,15 +410,14 @@ pnpm mobile:build:apk
 
 ---
 
-### 11. Multi-Provider Messaging Platform (Phase 1: Email)
+### 11. Multi-Provider Messaging Platform (Phase 1 & Phase 2)
 
-The platform provides a scalable, enterprise multi-tenant messaging router with credential encryption, dynamic configuration schemas, templating engine, and Valkey background queues.
+The platform provides a scalable, enterprise multi-tenant messaging router with credential encryption, dynamic configuration schemas, templating engine, Valkey background queues, cryptographic webhook verification, and real-time delivery telemetry.
 
 #### Architecture Highlights
 1. **Global Provider Registry (`providers` table):**
    - Seeded with 8 initial providers (`smtp`, `sendgrid`, `amazon-ses`, `mailgun`, `mailchimp-transactional`, `brevo`, `postmark`, `resend`).
-   - Phase 1 delivers fully operational adapters for **SMTP** (RFC 5321/5322 socket/TLS engine) and **SendGrid** (v3 REST API).
-   - Remaining providers are cataloged in `COMING_SOON` status for future phases.
+   - Fully operational adapters for **SMTP**, **SendGrid v3 REST API**, and pre-scaled SMTP providers (**Amazon SES**, **Mailgun**, **Mandrill**, **Brevo**, **Postmark**, and **Resend**).
 2. **Multi-Tenant Encrypted Credentials (`user_provider_configurations` table):**
    - AES-256-GCM symmetric encryption with randomized 16-byte initialization vectors and auth tags.
    - Plaintext credentials and secrets are stripped and masked before serialization to API responses.
@@ -429,19 +428,30 @@ The platform provides a scalable, enterprise multi-tenant messaging router with 
    - High-throughput asynchronous dispatching via Valkey atomic `LPUSH` / `RPOPLPUSH`.
    - Automatic retry handling with dead-letter queue (DLQ) support.
 5. **Dynamic Schema-Driven UI (`/admin/messaging`):**
-   - Dynamic configuration forms rendered directly from database schemas.
+   - Reusable `ConnectProviderButton` and `ProviderSelectionModal` dynamically generated from database schemas.
    - Real-time connection testing, interactive composer with template preview, and delivery logs.
+6. **Phase 2: Email Webhooks, Delivery Tracking & Event Deduplication (`MessagingWebhooksModule`):**
+   - **Dynamic Webhook Endpoints:** Dedicated endpoints generated per provider configuration (`/api/webhooks/messaging/email/{configuration-uuid}`).
+   - **SendGrid Signed Event Webhooks:** Cryptographic ECDSA SHA-256 signature verification (`X-Twilio-Email-Event-Webhook-Signature` & `X-Twilio-Email-Event-Webhook-Timestamp`).
+   - **Event Normalization & Deduplication:** Normalizes incoming provider batches into standard types (`DELIVERED`, `OPENED`, `CLICKED`, `BOUNCED`, `DROPPED`, `SPAM_REPORTED`, `UNSUBSCRIBED`, `FAILED`) with 24-hour Valkey atomic deduplication.
+   - **Message Status Management:** Recipient-level isolation and message lifecycle updates without regressing terminal states.
+   - **Engagement & Telemetry Analytics:** Dedicated message details timeline modal (inspecting exact event sequences, clicked URLs, and bounce causes) and aggregated 7-day time series charts.
 
-#### API Endpoints
-* `GET /api/messaging/stats`: Overview metrics (total sent, delivered %, queued, failed).
-* `GET /api/messaging/providers`: List available global providers with form field schemas.
-* `GET /api/messaging/configurations`: List current user's encrypted configurations.
-* `POST /api/messaging/configurations`: Add new encrypted configuration.
-* `POST /api/messaging/configurations/:uuid/test`: Test connection with provider server/API.
-* `POST /api/messaging/configurations/:uuid/default`: Set provider configuration as channel default.
-* `DELETE /api/messaging/configurations/:uuid`: Soft-delete provider configuration.
-* `GET /api/messaging/templates`: List available email templates.
-* `POST /api/messaging/templates`: Create new customizable email template.
-* `POST /api/messaging/emails/send`: Dispatch email synchronously or enqueue in Valkey queue.
-* `GET /api/messaging/emails`: Paginated delivery logs with recipient status and error tracking.
+#### Webhook Setup Instructions (SendGrid)
+1. In your SendGrid Dashboard, navigate to **Settings → Mail Settings → Event Webhook**.
+2. Copy your unique dynamic webhook URL from `/admin/messaging` (**Webhooks & Events** tab).
+3. Paste the URL into SendGrid's **HTTP Post URL** field.
+4. Enable **Signed Event Webhook** and copy the **Verification Key**.
+5. Paste the verification key into the dashboard to verify incoming signatures cryptographically.
+
+#### API Endpoints (Messaging & Webhooks)
+* `POST /api/webhooks/messaging/email/:configurationUuid`: Public webhook receiver for SendGrid/email providers.
+* `GET /api/messaging/webhook-endpoints/:configurationUuid`: Retrieve or generate unique endpoint URL and setup guide.
+* `PUT /api/messaging/webhook-endpoints/:configurationUuid/secret`: Save verification public key / signing secret.
+* `PUT /api/messaging/webhook-endpoints/:configurationUuid/status`: Enable or disable a webhook endpoint.
+* `GET /api/messaging/webhook-events`: Paginated list of ingested, deduplicated webhook events.
+* `POST /api/messaging/webhook-events/:eventUuid/retry`: Re-process a failed webhook event.
+* `GET /api/messaging/emails/:messageUuid/details`: Comprehensive message telemetry, recipient outcomes, and event timeline.
+* `GET /api/messaging/analytics`: Aggregated open/click/bounce rates and 7-day volume time series.
+
 

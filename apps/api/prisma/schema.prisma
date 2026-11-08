@@ -40,6 +40,9 @@ model User {
   provider_configurations UserProviderConfiguration[]
   email_templates        EmailTemplate[]
   email_messages         EmailMessage[]
+  webhook_endpoints      ProviderWebhookEndpoint[]
+  webhook_events         ProviderWebhookEvent[]
+  message_events         MessageEvent[]
   created_at             DateTime           @default(now()) @map("created_at")
   updated_at             DateTime           @updatedAt @map("updated_at")
 
@@ -240,6 +243,9 @@ model UserProviderConfiguration {
   updated_at         DateTime         @updatedAt @map("updated_at")
   deleted_at         DateTime?        @map("deleted_at")
   email_messages     EmailMessage[]
+  webhook_endpoints  ProviderWebhookEndpoint[]
+  webhook_events     ProviderWebhookEvent[]
+  message_events     MessageEvent[]
 
   @@index([user_uuid])
   @@index([provider_uuid])
@@ -299,6 +305,7 @@ model EmailMessage {
   updated_at         DateTime                  @updatedAt @map("updated_at")
   attachments        EmailAttachment[]
   recipients         MessageRecipient[]
+  message_events     MessageEvent[]
 
   @@index([user_uuid])
   @@index([status])
@@ -346,4 +353,112 @@ model EmailAttachment {
   @@index([message_uuid])
   @@map("email_attachments")
 }
+
+enum NormalizedEventType {
+  QUEUED
+  PROCESSED
+  ACCEPTED
+  DELIVERED
+  DEFERRED
+  OPENED
+  CLICKED
+  BOUNCED
+  DROPPED
+  SPAM_REPORTED
+  UNSUBSCRIBED
+  FAILED
+}
+
+enum WebhookProcessingStatus {
+  PENDING
+  PROCESSED
+  FAILED
+  IGNORED
+  DUPLICATE
+}
+
+model ProviderWebhookEndpoint {
+  endpoint_uuid              String                    @id @default(uuid()) @map("endpoint_uuid")
+  user_uuid                  String                    @map("user_uuid")
+  user                       User                      @relation(fields: [user_uuid], references: [user_uuid], onDelete: Cascade)
+  provider_configuration_uuid String                   @map("provider_configuration_uuid")
+  provider_configuration     UserProviderConfiguration @relation(fields: [provider_configuration_uuid], references: [configuration_uuid], onDelete: Cascade)
+  channel                    MessagingChannel          @default(EMAIL)
+  endpoint_token_hash        String                    @unique @map("endpoint_token_hash")
+  verification_secret        String?                   @map("verification_secret") // Encrypted public key / signing secret if needed
+  is_active                  Boolean                   @default(true) @map("is_active")
+  verification_status        Boolean                   @default(false) @map("verification_status")
+  total_events_received      Int                       @default(0) @map("total_events_received")
+  failed_events_count        Int                       @default(0) @map("failed_events_count")
+  last_received_at           DateTime?                 @map("last_received_at")
+  last_processed_at          DateTime?                 @map("last_processed_at")
+  created_at                 DateTime                  @default(now()) @map("created_at")
+  updated_at                 DateTime                  @updatedAt @map("updated_at")
+  deleted_at                 DateTime?                 @map("deleted_at")
+  webhook_events             ProviderWebhookEvent[]
+
+  @@index([user_uuid])
+  @@index([provider_configuration_uuid])
+  @@index([is_active])
+  @@map("provider_webhook_endpoints")
+}
+
+model ProviderWebhookEvent {
+  event_uuid                 String                    @id @default(uuid()) @map("event_uuid")
+  user_uuid                  String                    @map("user_uuid")
+  user                       User                      @relation(fields: [user_uuid], references: [user_uuid], onDelete: Cascade)
+  provider_configuration_uuid String                   @map("provider_configuration_uuid")
+  provider_configuration     UserProviderConfiguration @relation(fields: [provider_configuration_uuid], references: [configuration_uuid], onDelete: Cascade)
+  webhook_endpoint_uuid      String?                   @map("webhook_endpoint_uuid")
+  webhook_endpoint           ProviderWebhookEndpoint?  @relation(fields: [webhook_endpoint_uuid], references: [endpoint_uuid], onDelete: SetNull)
+  provider_event_id          String?                   @map("provider_event_id")
+  provider_event_type        String                    @map("provider_event_type")
+  normalized_event_type      NormalizedEventType       @map("normalized_event_type")
+  payload                    Json
+  processing_status          WebhookProcessingStatus   @default(PENDING) @map("processing_status")
+  processing_attempts        Int                       @default(0) @map("processing_attempts")
+  received_at                DateTime                  @default(now()) @map("received_at")
+  processed_at               DateTime?                 @map("processed_at")
+  error_message              String?                   @map("error_message")
+  created_at                 DateTime                  @default(now()) @map("created_at")
+  updated_at                 DateTime                  @updatedAt @map("updated_at")
+  message_events             MessageEvent[]
+
+  @@unique([provider_configuration_uuid, provider_event_id])
+  @@index([user_uuid])
+  @@index([provider_configuration_uuid])
+  @@index([provider_event_id])
+  @@index([normalized_event_type])
+  @@index([processing_status])
+  @@index([received_at])
+  @@map("provider_webhook_events")
+}
+
+model MessageEvent {
+  event_uuid                 String                    @id @default(uuid()) @map("event_uuid")
+  user_uuid                  String                    @map("user_uuid")
+  user                       User                      @relation(fields: [user_uuid], references: [user_uuid], onDelete: Cascade)
+  message_uuid               String                    @map("message_uuid")
+  message                    EmailMessage              @relation(fields: [message_uuid], references: [message_uuid], onDelete: Cascade)
+  provider_configuration_uuid String                   @map("provider_configuration_uuid")
+  provider_configuration     UserProviderConfiguration @relation(fields: [provider_configuration_uuid], references: [configuration_uuid], onDelete: Cascade)
+  provider_event_uuid        String?                   @map("provider_event_uuid")
+  provider_event             ProviderWebhookEvent?     @relation(fields: [provider_event_uuid], references: [event_uuid], onDelete: SetNull)
+  event_type                 NormalizedEventType       @map("event_type")
+  event_timestamp            DateTime                  @map("event_timestamp")
+  recipient_email            String                    @map("recipient_email")
+  clicked_url                String?                   @map("clicked_url")
+  failure_reason             String?                   @map("failure_reason")
+  metadata                   Json?                     @default("{}")
+  created_at                 DateTime                  @default(now()) @map("created_at")
+
+  @@index([user_uuid])
+  @@index([message_uuid])
+  @@index([provider_configuration_uuid])
+  @@index([recipient_email])
+  @@index([event_type])
+  @@index([event_timestamp])
+  @@map("message_events")
+}
+
 

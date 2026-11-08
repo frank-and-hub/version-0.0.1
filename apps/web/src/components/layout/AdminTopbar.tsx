@@ -46,7 +46,7 @@ export function AdminTopbar({ onMobileOpen }: AdminTopbarProps) {
           <Menu className="w-5 h-5" />
         </button>
         <div className="hidden sm:flex items-center gap-2">
-          <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md">
+          <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md btn">
             Admin Console
           </span>
           <span className="text-xs text-slate-400">•</span>
@@ -67,7 +67,7 @@ export function AdminTopbar({ onMobileOpen }: AdminTopbarProps) {
           href="http://localhost:4000/docs"
           target="_blank"
           rel="noreferrer"
-          className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700"
+          className="btn hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700"
         >
           <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
           Swagger Docs
@@ -75,7 +75,7 @@ export function AdminTopbar({ onMobileOpen }: AdminTopbarProps) {
 
         <Link
           href="/admin/health"
-          className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 rounded-lg border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900 transition-colors"
+          className="btn hidden sm:flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 rounded-lg border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900 transition-colors"
         >
           <Activity className="w-3.5 h-3.5" />
           Services Healthy
@@ -146,7 +146,7 @@ export function AdminTopbar({ onMobileOpen }: AdminTopbarProps) {
                     setIsDropdownOpen(false);
                     logout();
                   }}
-                  className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors text-left"
+                  className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-rose-600 rounded-lg dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors text-left"
                 >
                   <LogOut className="w-4 h-4" />
                   Sign Out
