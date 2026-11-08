@@ -88,13 +88,21 @@ export const ProviderSelectionModal: React.FC<ProviderSelectionModalProps> = ({
                 ? `Edit ${editConfig.provider?.name || 'Provider'} Configuration`
                 : selectedProvider
                 ? `Connect ${selectedProvider.name}`
-                : 'Connect Provider'}
+                : channel === 'SMS'
+                ? 'Connect SMS Messaging Provider'
+                : channel === 'WHATSAPP'
+                ? 'Connect WhatsApp Messaging Provider'
+                : 'Connect Your Email Provider'}
             </h2>
             <p className="text-xs text-slate-500">
               {selectedProvider
-                ? channel === 'WHATSAPP'
+                ? channel === 'SMS'
+                  ? 'Fill in Twilio credentials to start sending global SMS alerts, 2FA, and notifications'
+                  : channel === 'WHATSAPP'
                   ? 'Fill in official credentials to start sending WhatsApp templates & interactive chats'
                   : 'Fill in authentication credentials to start dispatching system emails'
+                : channel === 'SMS'
+                ? 'Choose from carrier-grade SMS gateways such as Twilio Programmable SMS'
                 : channel === 'WHATSAPP'
                 ? 'Choose from official Meta Cloud API, Interakt, WATI, and Twilio WhatsApp providers'
                 : 'Choose from supported high-throughput enterprise mail providers'}

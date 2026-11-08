@@ -20,7 +20,7 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { WebhookService } from './services/webhook.service';
 import { WebhookEndpointService } from './services/webhook-endpoint.service';
 import { EmailAnalyticsService } from './services/email-analytics.service';
-import { WebhookProcessingStatus } from '@prisma/client';
+import { WebhookProcessingStatus, MessagingChannel } from '@prisma/client';
 
 @ApiTags('Messaging Webhooks & Analytics')
 @Controller()
@@ -110,6 +110,7 @@ export class WebhookController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('configuration_uuid') configurationUuid?: string,
+    @Query('channel') channel?: MessagingChannel,
     @Query('status') status?: WebhookProcessingStatus,
     @Query('event_type') eventType?: string,
     @Query('search') search?: string,
@@ -118,6 +119,7 @@ export class WebhookController {
       page,
       limit,
       configuration_uuid: configurationUuid,
+      channel,
       status,
       event_type: eventType,
       search,

@@ -11,3 +11,5 @@ export * from './EmailMessageDetailsModal';
 export * from './EmailAnalyticsDashboardTab';
 export * from './WhatsAppMessagingTab';
 export * from './WhatsAppTemplateModal';
+export * from './SmsMessagingTab';
+export * from './MessagingTemplatesTab';

@@ -592,7 +592,7 @@ export default function SettingsPage() {
                   rows={6}
                   value={editValue}
                   onChange={(e) => setEditValue(e.target.value)}
-                  className="w-full text-xs font-mono rounded-lg border border-slate-200 dark:border-slate-700 p-3 bg-slate-900 text-emerald-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full text-xs font-mono rounded-lg border border-slate-200 dark:border-slate-700 p-3 bg-slate-900 text-emerald-400 "
                 />
               ) : (
                 <input

@@ -60,15 +60,28 @@ export class WebhookEndpointService {
       });
     }
 
-    const webhookUrl = `${baseUrl.replace(/\/+$/, '')}/api/webhooks/messaging/email/${configurationUuid}`;
+    const cleanBaseUrl = baseUrl.replace(/\/+$/, '');
+    let webhookUrl: string;
+    let inboundWebhookUrl: string | undefined;
+
+    if (config.type === MessagingChannel.WHATSAPP) {
+      webhookUrl = `${cleanBaseUrl}/api/webhooks/messaging/whatsapp/${configurationUuid}`;
+    } else if (config.type === MessagingChannel.SMS) {
+      webhookUrl = `${cleanBaseUrl}/api/webhooks/messaging/sms/${config.provider.slug}/${configurationUuid}/status`;
+      inboundWebhookUrl = `${cleanBaseUrl}/api/webhooks/messaging/sms/${config.provider.slug}/${configurationUuid}/inbound`;
+    } else {
+      webhookUrl = `${cleanBaseUrl}/api/webhooks/messaging/email/${configurationUuid}`;
+    }
 
     return {
       endpoint_uuid: endpoint.endpoint_uuid,
       configuration_uuid: configurationUuid,
       provider_name: config.provider.name,
       provider_slug: config.provider.slug,
+      channel: config.type,
       configuration_name: config.configuration_name,
       webhook_url: webhookUrl,
+      inbound_webhook_url: inboundWebhookUrl,
       is_active: endpoint.is_active,
       verification_status: endpoint.verification_status,
       verification_secret: endpoint.verification_secret ? '••••••••' : null,
@@ -78,7 +91,7 @@ export class WebhookEndpointService {
       last_received_at: endpoint.last_received_at,
       last_processed_at: endpoint.last_processed_at,
       created_at: endpoint.created_at,
-      setup_instructions: this.getSetupInstructions(config.provider.slug, webhookUrl),
+      setup_instructions: this.getSetupInstructions(config.provider.slug, config.type, webhookUrl, inboundWebhookUrl),
     };
   }
 
@@ -155,12 +168,88 @@ export class WebhookEndpointService {
     });
   }
 
-  private getSetupInstructions(providerSlug: string, webhookUrl: string): string {
-    switch (providerSlug.toLowerCase()) {
+  private getSetupInstructions(
+    providerSlug: string,
+    channel: MessagingChannel,
+    webhookUrl: string,
+    inboundWebhookUrl?: string,
+  ): string {
+    const slug = providerSlug.toLowerCase();
+
+    // 1. WhatsApp Providers
+    if (channel === MessagingChannel.WHATSAPP) {
+      if (slug.includes('meta') || slug.includes('cloud')) {
+        return `To configure Meta WhatsApp Cloud API Webhooks:
+1. Open your Meta Developer App Dashboard → WhatsApp → Configuration.
+2. In 'Webhook Callback URL', paste this URL:
+   ${webhookUrl}
+3. In 'Verify Token', enter the exact Webhook Verify Token configured in your provider configuration.
+4. Click 'Verify and Save'. Meta will send a GET challenge to verify ownership.
+5. In 'Webhook Fields', subscribe to: 'messages' (for delivery receipts and inbound messages) and 'message_template_status_update'.
+6. (Optional) Copy your Meta App Secret and save it as the Verification Secret here for X-Hub-Signature-256 HMAC validation.`;
+      }
+      return `To configure WhatsApp Webhooks for ${providerSlug}:
+1. Log in to your ${providerSlug} admin console → Webhooks / Developer Settings.
+2. Set the Callback / Status Notification URL to:
+   ${webhookUrl}
+3. Select message status events: Sent, Delivered, Read, and Failed.
+4. Save and verify the endpoint.`;
+    }
+
+    // 2. SMS Providers
+    if (channel === MessagingChannel.SMS) {
+      if (slug.includes('twilio')) {
+        return `To configure Twilio SMS Webhooks:
+1. Status Callbacks: In your Twilio Console → Messaging Services (or individual phone numbers), set the Status Callback URL to:
+   ${webhookUrl} (HTTP POST)
+2. Inbound SMS: Under 'A Message Comes In', set Webhook URL to:
+   ${inboundWebhookUrl || webhookUrl} (HTTP POST)
+3. Twilio will report delivery receipts (delivered, undelivered, failed) and forward incoming messages with STOP/UNSTOP opt-outs.`;
+      }
+      if (slug.includes('sns') || slug.includes('aws')) {
+        return `To configure AWS SNS SMS Delivery Feedback:
+1. Open AWS SNS Console → Text messaging (SMS) → Delivery status.
+2. Configure Amazon CloudWatch or SNS topic notification HTTP endpoint:
+   ${webhookUrl}
+3. Ingest delivery events (delivered, direct_publish_failure) directly into your telemetry.`;
+      }
+      return `To configure ${providerSlug} SMS Webhooks:
+1. Status Callback URL: Set your delivery receipt callback URL to:
+   ${webhookUrl}
+2. Inbound SMS Callback URL: Set your incoming SMS notification webhook to:
+   ${inboundWebhookUrl || webhookUrl}
+3. Ensure HTTP POST with JSON or form-encoded payload is enabled.`;
+    }
+
+    // 3. Email Providers
+    switch (slug) {
       case 'sendgrid':
-        return `To configure SendGrid Event Webhooks:\n1. Log into your SendGrid Dashboard and navigate to Settings → Mail Settings → Event Webhook.\n2. In the 'HTTP Post URL' field, paste this exact URL:\n   ${webhookUrl}\n3. Select all event types you want to track (Delivered, Bounced, Dropped, Opened, Clicked, Spam Report, Unsubscribe).\n4. Enable 'Signed Event Webhook' and copy the Verification Key.\n5. Paste the verification key into the 'Verification Secret' field in this dashboard to verify signatures.\n6. Click 'Test Your Integration' in SendGrid and save.`;
+        return `To configure SendGrid Event Webhooks:
+1. Log into your SendGrid Dashboard and navigate to Settings → Mail Settings → Event Webhook.
+2. In the 'HTTP Post URL' field, paste this exact URL:
+   ${webhookUrl}
+3. Select all event types you want to track (Delivered, Bounced, Dropped, Opened, Clicked, Spam Report, Unsubscribe).
+4. Enable 'Signed Event Webhook' and copy the Verification Key.
+5. Paste the verification key into the 'Verification Secret' field in this dashboard to verify signatures.
+6. Click 'Test Your Integration' in SendGrid and save.`;
+      case 'resend':
+        return `To configure Resend Webhooks:
+1. Go to your Resend Dashboard → Webhooks → Add Webhook.
+2. Set Endpoint URL to:
+   ${webhookUrl}
+3. Select events: email.sent, email.delivered, email.bounced, email.opened, email.clicked.
+4. Copy the Signing Secret (starts with 'whsec_') and save it here in Verification Secret.`;
+      case 'postmark':
+        return `To configure Postmark Webhooks:
+1. Go to your Postmark Server → Settings → Webhooks.
+2. Add Webhook with URL:
+   ${webhookUrl}
+3. Check Delivery, Bounce, Open, and Click tracking checkboxes.
+4. Save the webhook.`;
       default:
-        return `Configure your provider's HTTP POST notification URL to:\n${webhookUrl}\nEnsure JSON payload delivery is enabled.`;
+        return `Configure your provider's HTTP POST notification URL to:
+${webhookUrl}
+Ensure JSON payload delivery is enabled for delivery, open, read, and bounce events.`;
     }
   }
 }

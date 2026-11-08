@@ -46,6 +46,10 @@ model User {
   whatsapp_conversations WhatsAppConversation[]
   whatsapp_messages      WhatsAppMessage[]
   whatsapp_templates     WhatsAppTemplate[]
+  sms_conversations      SmsConversation[]
+  sms_messages           SmsMessage[]
+  sms_templates          SmsTemplate[]
+  sms_opt_outs           SmsOptOut[]
   created_at             DateTime           @default(now()) @map("created_at")
   updated_at             DateTime           @updatedAt @map("updated_at")
 
@@ -255,6 +259,8 @@ model UserProviderConfiguration {
   whatsapp_conversations WhatsAppConversation[]
   whatsapp_messages      WhatsAppMessage[]
   whatsapp_templates     WhatsAppTemplate[]
+  sms_conversations      SmsConversation[]
+  sms_messages           SmsMessage[]
 
   @@index([user_uuid])
   @@index([provider_uuid])
@@ -574,6 +580,126 @@ model WhatsAppTemplate {
   @@index([provider_configuration_uuid])
   @@index([name])
   @@map("whatsapp_templates")
+}
+
+// -----------------------------------------------------------------------------
+// SMS Messaging Models (Twilio Programmable SMS, Opt-Out Compliance, Scheduling)
+// -----------------------------------------------------------------------------
+
+enum SmsMessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum SmsEncoding {
+  GSM_7BIT
+  UCS2
+}
+
+model SmsConversation {
+  conversation_uuid           String                    @id @default(uuid()) @map("conversation_uuid")
+  user_uuid                   String                    @map("user_uuid")
+  user                        User                      @relation(fields: [user_uuid], references: [user_uuid], onDelete: Cascade)
+  provider_configuration_uuid String                    @map("provider_configuration_uuid")
+  provider_configuration      UserProviderConfiguration @relation(fields: [provider_configuration_uuid], references: [configuration_uuid], onDelete: Cascade)
+  contact_phone               String                    @map("contact_phone")
+  contact_name                String?                   @map("contact_name")
+  last_message_at             DateTime?                 @map("last_message_at")
+  last_message_direction      SmsMessageDirection?      @map("last_message_direction")
+  is_active                   Boolean                   @default(true) @map("is_active")
+  created_at                  DateTime                  @default(now()) @map("created_at")
+  updated_at                  DateTime                  @updatedAt @map("updated_at")
+  messages                    SmsMessage[]
+
+  @@unique([provider_configuration_uuid, contact_phone])
+  @@index([user_uuid])
+  @@index([provider_configuration_uuid])
+  @@index([contact_phone])
+  @@index([last_message_at])
+  @@map("sms_conversations")
+}
+
+model SmsMessage {
+  message_uuid                String                    @id @default(uuid()) @map("message_uuid")
+  conversation_uuid           String?                   @map("conversation_uuid")
+  conversation                SmsConversation?          @relation(fields: [conversation_uuid], references: [conversation_uuid], onDelete: SetNull)
+  user_uuid                   String                    @map("user_uuid")
+  user                        User                      @relation(fields: [user_uuid], references: [user_uuid], onDelete: Cascade)
+  provider_configuration_uuid String                    @map("provider_configuration_uuid")
+  provider_configuration      UserProviderConfiguration @relation(fields: [provider_configuration_uuid], references: [configuration_uuid], onDelete: Cascade)
+  direction                   SmsMessageDirection       @default(OUTBOUND) @map("direction")
+  provider_message_id         String?                   @unique @map("provider_message_id")
+  messaging_service_sid       String?                   @map("messaging_service_sid")
+  recipient_phone             String                    @map("recipient_phone")
+  sender_phone                String                    @map("sender_phone")
+  body                        String                    @map("body")
+  segment_count               Int                       @default(1) @map("segment_count")
+  encoding                    SmsEncoding               @default(GSM_7BIT) @map("encoding")
+  status                      MessageSendingStatus      @default(QUEUED) @map("status")
+  scheduled_at                DateTime?                 @map("scheduled_at")
+  is_scheduled                Boolean                   @default(false) @map("is_scheduled")
+  cancelled_at                DateTime?                 @map("cancelled_at")
+  error_code                  String?                   @map("error_code")
+  error_message               String?                   @map("error_message")
+  price                       Float?                    @map("price")
+  price_unit                  String?                   @default("USD") @map("price_unit")
+  sent_at                     DateTime?                 @map("sent_at")
+  delivered_at                DateTime?                 @map("delivered_at")
+  failed_at                   DateTime?                 @map("failed_at")
+  template_uuid               String?                   @map("template_uuid")
+  template_variables          Json?                     @default("{}") @map("template_variables")
+  metadata                    Json?                     @default("{}") @map("metadata")
+  created_at                  DateTime                  @default(now()) @map("created_at")
+  updated_at                  DateTime                  @updatedAt @map("updated_at")
+
+  @@index([conversation_uuid])
+  @@index([user_uuid])
+  @@index([provider_configuration_uuid])
+  @@index([provider_message_id])
+  @@index([direction])
+  @@index([status])
+  @@index([is_scheduled])
+  @@index([scheduled_at])
+  @@index([created_at])
+  @@map("sms_messages")
+}
+
+model SmsTemplate {
+  template_uuid               String                    @id @default(uuid()) @map("template_uuid")
+  user_uuid                   String                    @map("user_uuid")
+  user                        User                      @relation(fields: [user_uuid], references: [user_uuid], onDelete: Cascade)
+  name                        String                    @map("name")
+  description                 String?                   @map("description")
+  body                        String                    @map("body")
+  variables                   Json                      @default("[]") @map("variables")
+  is_active                   Boolean                   @default(true) @map("is_active")
+  created_at                  DateTime                  @default(now()) @map("created_at")
+  updated_at                  DateTime                  @updatedAt @map("updated_at")
+  deleted_at                  DateTime?                 @map("deleted_at")
+
+  @@index([user_uuid])
+  @@index([is_active])
+  @@map("sms_templates")
+}
+
+model SmsOptOut {
+  opt_out_uuid                String                    @id @default(uuid()) @map("opt_out_uuid")
+  user_uuid                   String                    @map("user_uuid")
+  user                        User                      @relation(fields: [user_uuid], references: [user_uuid], onDelete: Cascade)
+  phone_number                String                    @map("phone_number")
+  reason                      String                    @default("STOP") @map("reason")
+  source                      String                    @default("INBOUND_SMS") @map("source")
+  is_opted_out                Boolean                   @default(true) @map("is_opted_out")
+  opted_out_at                DateTime                  @default(now()) @map("opted_out_at")
+  opted_in_at                 DateTime?                 @map("opted_in_at")
+  created_at                  DateTime                  @default(now()) @map("created_at")
+  updated_at                  DateTime                  @updatedAt @map("updated_at")
+
+  @@unique([user_uuid, phone_number])
+  @@index([user_uuid])
+  @@index([phone_number])
+  @@index([is_opted_out])
+  @@map("sms_opt_outs")
 }
 
 

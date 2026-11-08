@@ -13,6 +13,15 @@ import {
   VonageWhatsAppAdapter,
   AiSensyWhatsAppAdapter,
 } from './adapters/whatsapp-cloud.provider';
+import { TwilioSmsProviderAdapter } from './adapters/twilio-sms.provider';
+import {
+  AwsSnsSmsProviderAdapter,
+  MessageBirdSmsProviderAdapter,
+  VonageSmsProviderAdapter,
+  PlivoSmsProviderAdapter,
+  TelnyxSmsProviderAdapter,
+  InfobipSmsProviderAdapter,
+} from './adapters/additional-sms.providers';
 import { ProviderEncryptionService } from './services/provider-encryption.service';
 import { ProviderRegistryService } from './services/provider-registry.service';
 import { ProviderConfigurationService } from './services/provider-configuration.service';
@@ -21,14 +30,16 @@ import { EmailQueueService } from './services/email-queue.service';
 import { EmailSendingService } from './services/email-sending.service';
 import { EmailWorkerService } from './services/email-worker.service';
 import { WhatsAppService } from './services/whatsapp.service';
+import { SmsService } from './services/sms.service';
 import { MessagingController } from './messaging.controller';
 import { WhatsAppController } from './whatsapp.controller';
+import { SmsController } from './sms.controller';
 
 import { MessagingWebhooksModule } from './webhooks/messaging-webhooks.module';
 
 @Module({
   imports: [PrismaModule, ValkeyModule, MessagingWebhooksModule],
-  controllers: [MessagingController, WhatsAppController],
+  controllers: [MessagingController, WhatsAppController, SmsController],
   providers: [
     SmtpEmailProvider,
     SendGridEmailProvider,
@@ -40,6 +51,13 @@ import { MessagingWebhooksModule } from './webhooks/messaging-webhooks.module';
     GupshupWhatsAppAdapter,
     VonageWhatsAppAdapter,
     AiSensyWhatsAppAdapter,
+    TwilioSmsProviderAdapter,
+    AwsSnsSmsProviderAdapter,
+    MessageBirdSmsProviderAdapter,
+    VonageSmsProviderAdapter,
+    PlivoSmsProviderAdapter,
+    TelnyxSmsProviderAdapter,
+    InfobipSmsProviderAdapter,
     ProviderEncryptionService,
     ProviderRegistryService,
     ProviderConfigurationService,
@@ -48,6 +66,7 @@ import { MessagingWebhooksModule } from './webhooks/messaging-webhooks.module';
     EmailSendingService,
     EmailWorkerService,
     WhatsAppService,
+    SmsService,
   ],
   exports: [
     ProviderRegistryService,
@@ -55,6 +74,7 @@ import { MessagingWebhooksModule } from './webhooks/messaging-webhooks.module';
     EmailSendingService,
     EmailTemplateService,
     WhatsAppService,
+    SmsService,
     WhatsAppCloudApiAdapter,
     InteraktWhatsAppAdapter,
     WatiWhatsAppAdapter,
@@ -63,6 +83,13 @@ import { MessagingWebhooksModule } from './webhooks/messaging-webhooks.module';
     GupshupWhatsAppAdapter,
     VonageWhatsAppAdapter,
     AiSensyWhatsAppAdapter,
+    TwilioSmsProviderAdapter,
+    AwsSnsSmsProviderAdapter,
+    MessageBirdSmsProviderAdapter,
+    VonageSmsProviderAdapter,
+    PlivoSmsProviderAdapter,
+    TelnyxSmsProviderAdapter,
+    InfobipSmsProviderAdapter,
   ],
 })
 export class MessagingModule {}

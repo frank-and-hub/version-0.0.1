@@ -8,7 +8,7 @@ import { PrismaService } from '../../../database/prisma.service';
 import { ValkeyService } from '../../../cache/valkey.service';
 import { WebhookRegistryService } from './webhook-registry.service';
 import { WebhookEventProcessorService } from './webhook-event-processor.service';
-import { WebhookProcessingStatus } from '@prisma/client';
+import { WebhookProcessingStatus, MessagingChannel } from '@prisma/client';
 
 export interface IngestWebhookParams {
   configurationUuid: string;
@@ -175,6 +175,7 @@ export class WebhookService {
       page?: number;
       limit?: number;
       configuration_uuid?: string;
+      channel?: MessagingChannel;
       status?: WebhookProcessingStatus;
       event_type?: string;
       search?: string;
@@ -187,6 +188,7 @@ export class WebhookService {
     const where: any = {
       user_uuid: userUuid,
       ...(query.configuration_uuid ? { provider_configuration_uuid: query.configuration_uuid } : {}),
+      ...(query.channel ? { provider_configuration: { type: query.channel } } : {}),
       ...(query.status ? { processing_status: query.status } : {}),
       ...(query.event_type ? { normalized_event_type: query.event_type as any } : {}),
       ...(query.search

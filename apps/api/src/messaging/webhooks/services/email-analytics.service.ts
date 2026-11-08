@@ -129,6 +129,14 @@ export class EmailAnalyticsService {
       failedCount,
       bouncedCount,
       totalEvents,
+      waTotal,
+      waDelivered,
+      waRead,
+      waFailed,
+      smsTotal,
+      smsDelivered,
+      smsFailed,
+      smsOptOuts,
     ] = await Promise.all([
       this.prisma.emailMessage.count({ where }),
       this.prisma.emailMessage.count({
@@ -153,6 +161,32 @@ export class EmailAnalyticsService {
           event_timestamp: true,
         },
       }),
+      // WhatsApp telemetry counts
+      this.prisma.whatsAppMessage.count({
+        where: { user_uuid: userUuid, direction: 'OUTBOUND' },
+      }),
+      this.prisma.whatsAppMessage.count({
+        where: { user_uuid: userUuid, direction: 'OUTBOUND', status: { in: ['DELIVERED', 'READ'] } },
+      }),
+      this.prisma.whatsAppMessage.count({
+        where: { user_uuid: userUuid, direction: 'OUTBOUND', status: 'READ' },
+      }),
+      this.prisma.whatsAppMessage.count({
+        where: { user_uuid: userUuid, direction: 'OUTBOUND', status: 'FAILED' },
+      }),
+      // SMS telemetry counts
+      this.prisma.smsMessage.count({
+        where: { user_uuid: userUuid, direction: 'OUTBOUND' },
+      }),
+      this.prisma.smsMessage.count({
+        where: { user_uuid: userUuid, direction: 'OUTBOUND', status: 'DELIVERED' },
+      }),
+      this.prisma.smsMessage.count({
+        where: { user_uuid: userUuid, direction: 'OUTBOUND', status: 'FAILED' },
+      }),
+      this.prisma.smsOptOut.count({
+        where: { user_uuid: userUuid, is_opted_out: true },
+      }),
     ]);
 
     // Calculate Unique Engagement counts
@@ -170,28 +204,93 @@ export class EmailAnalyticsService {
     const openRate = deliveredCount > 0 ? Number(((uniqueOpenCount / deliveredCount) * 100).toFixed(1)) : 0;
     const clickRate = deliveredCount > 0 ? Number(((uniqueClickCount / deliveredCount) * 100).toFixed(1)) : 0;
 
+    // Omnichannel aggregations
+    const grandTotalSent = totalSent + waTotal + smsTotal;
+    const grandDelivered = deliveredCount + waDelivered + smsDelivered;
+    const grandOpenedOrRead = uniqueOpenCount + waRead;
+    const grandFailed = failedCount + waFailed + smsFailed;
+    const grandDeliveryRate = grandTotalSent > 0 ? Number(((grandDelivered / grandTotalSent) * 100).toFixed(1)) : 100;
+    const grandOpenRate = (deliveredCount + waDelivered) > 0 ? Number(((grandOpenedOrRead / (deliveredCount + waDelivered)) * 100).toFixed(1)) : 0;
+
     // Time-series breakdown for last 7 days
-    const daysMap = new Map<string, { sent: number; delivered: number; opens: number; clicks: number }>();
+    const daysMap = new Map<string, {
+      sent: number;
+      delivered: number;
+      opens: number;
+      clicks: number;
+      email_sent: number;
+      whatsapp_sent: number;
+      sms_sent: number;
+    }>();
+
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const dateKey = d.toISOString().slice(0, 10);
-      daysMap.set(dateKey, { sent: 0, delivered: 0, opens: 0, clicks: 0 });
+      daysMap.set(dateKey, {
+        sent: 0,
+        delivered: 0,
+        opens: 0,
+        clicks: 0,
+        email_sent: 0,
+        whatsapp_sent: 0,
+        sms_sent: 0,
+      });
     }
 
-    const recentMessages = await this.prisma.emailMessage.findMany({
-      where: {
-        user_uuid: userUuid,
-        created_at: { gte: new Date(Date.now() - 7 * 86400000) },
-      },
-      select: { created_at: true, status: true },
-    });
+    const [recentEmail, recentWa, recentSms] = await Promise.all([
+      this.prisma.emailMessage.findMany({
+        where: {
+          user_uuid: userUuid,
+          created_at: { gte: new Date(Date.now() - 7 * 86400000) },
+        },
+        select: { created_at: true, status: true },
+      }),
+      this.prisma.whatsAppMessage.findMany({
+        where: {
+          user_uuid: userUuid,
+          direction: 'OUTBOUND',
+          created_at: { gte: new Date(Date.now() - 7 * 86400000) },
+        },
+        select: { created_at: true, status: true },
+      }),
+      this.prisma.smsMessage.findMany({
+        where: {
+          user_uuid: userUuid,
+          direction: 'OUTBOUND',
+          created_at: { gte: new Date(Date.now() - 7 * 86400000) },
+        },
+        select: { created_at: true, status: true },
+      }),
+    ]);
 
-    for (const msg of recentMessages) {
+    for (const msg of recentEmail) {
       const key = msg.created_at.toISOString().slice(0, 10);
       if (daysMap.has(key)) {
         const item = daysMap.get(key)!;
         item.sent += 1;
+        item.email_sent += 1;
+        if (msg.status === 'DELIVERED') item.delivered += 1;
+      }
+    }
+
+    for (const msg of recentWa) {
+      const key = msg.created_at.toISOString().slice(0, 10);
+      if (daysMap.has(key)) {
+        const item = daysMap.get(key)!;
+        item.sent += 1;
+        item.whatsapp_sent += 1;
+        if (msg.status === 'DELIVERED' || (msg.status as any) === 'READ') item.delivered += 1;
+        if ((msg.status as any) === 'READ') item.opens += 1;
+      }
+    }
+
+    for (const msg of recentSms) {
+      const key = msg.created_at.toISOString().slice(0, 10);
+      if (daysMap.has(key)) {
+        const item = daysMap.get(key)!;
+        item.sent += 1;
+        item.sms_sent += 1;
         if (msg.status === 'DELIVERED') item.delivered += 1;
       }
     }
@@ -228,6 +327,48 @@ export class EmailAnalyticsService {
         bounce_rate: bounceRate,
         open_rate: openRate,
         click_rate: clickRate,
+      },
+      omnichannel: {
+        total_sent: grandTotalSent,
+        delivered: grandDelivered,
+        opened_or_read: grandOpenedOrRead,
+        clicked: uniqueClickCount,
+        failed: grandFailed,
+        bounced: bouncedCount,
+        unsubscribes: unsubEvents.length + smsOptOuts,
+        rates: {
+          delivery_rate: grandDeliveryRate,
+          open_read_rate: grandOpenRate,
+          click_rate: grandDelivered > 0 ? Number(((uniqueClickCount / grandDelivered) * 100).toFixed(1)) : 0,
+        },
+      },
+      channels: {
+        email: {
+          total_sent: totalSent,
+          delivered: deliveredCount,
+          opened: uniqueOpenCount,
+          clicked: uniqueClickCount,
+          bounced: bouncedCount,
+          failed: failedCount,
+          delivery_rate: deliveryRate,
+          open_rate: openRate,
+          click_rate: clickRate,
+        },
+        whatsapp: {
+          total_sent: waTotal,
+          delivered: waDelivered,
+          read: waRead,
+          failed: waFailed,
+          delivery_rate: waTotal > 0 ? Number(((waDelivered / waTotal) * 100).toFixed(1)) : 100,
+          read_rate: waDelivered > 0 ? Number(((waRead / waDelivered) * 100).toFixed(1)) : 0,
+        },
+        sms: {
+          total_sent: smsTotal,
+          delivered: smsDelivered,
+          failed: smsFailed,
+          opt_outs: smsOptOuts,
+          delivery_rate: smsTotal > 0 ? Number(((smsDelivered / smsTotal) * 100).toFixed(1)) : 100,
+        },
       },
       time_series: timeSeries,
     };

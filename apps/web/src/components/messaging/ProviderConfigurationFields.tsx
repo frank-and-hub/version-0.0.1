@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { ProviderFormField } from './types';
-import { Input } from '@/components/ui/Input';
+import React from "react";
+import { ProviderFormField } from "./types";
+import { Input } from "@/components/ui/Input";
 
 interface ProviderConfigurationFieldsProps {
   fields: ProviderFormField[];
@@ -12,21 +12,20 @@ interface ProviderConfigurationFieldsProps {
 }
 
 const EXCLUDED_FIELDS = new Set([
-  'configuration_name',
-  'sender_name',
-  'sender_email',
-  'sender_phone',
-  'reply_to',
-  'is_default',
+  "configuration_name",
+  "sender_name",
+  "sender_email",
+  "sender_phone",
+  "reply_to",
+  "is_default",
 ]);
 
-export const ProviderConfigurationFields: React.FC<ProviderConfigurationFieldsProps> = ({
-  fields,
-  credentials,
-  onChange,
-  disabled = false,
-}) => {
-  const credentialFields = (fields || []).filter((f) => !EXCLUDED_FIELDS.has(f.name));
+export const ProviderConfigurationFields: React.FC<
+  ProviderConfigurationFieldsProps
+> = ({ fields, credentials, onChange, disabled = false }) => {
+  const credentialFields = (fields || []).filter(
+    (f) => !EXCLUDED_FIELDS.has(f.name),
+  );
 
   if (!credentialFields || credentialFields.length === 0) {
     return (
@@ -50,9 +49,9 @@ export const ProviderConfigurationFields: React.FC<ProviderConfigurationFieldsPr
         const value =
           credentials[field.name] !== undefined
             ? credentials[field.name]
-            : (field.default_value ?? '');
+            : (field.default_value ?? "");
 
-        if (field.type === 'boolean') {
+        if (field.type === "boolean") {
           return (
             <div key={field.name} className="flex items-center gap-2 pt-1">
               <input
@@ -67,26 +66,30 @@ export const ProviderConfigurationFields: React.FC<ProviderConfigurationFieldsPr
                 htmlFor={`field_${field.name}`}
                 className="text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer"
               >
-                {field.label} {field.required && <span className="text-rose-500">*</span>}
+                {field.label}{" "}
+                {field.required && <span className="text-rose-500">*</span>}
               </label>
               {field.description && (
-                <span className="text-[11px] text-slate-400 ml-1">({field.description})</span>
+                <span className="text-[11px] text-slate-400 ml-1">
+                  ({field.description})
+                </span>
               )}
             </div>
           );
         }
 
-        if (field.type === 'select') {
+        if (field.type === "select") {
           return (
             <div key={field.name}>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                {field.label} {field.required && <span className="text-rose-500">*</span>}
+                {field.label}{" "}
+                {field.required && <span className="text-rose-500">*</span>}
               </label>
               <select
                 disabled={disabled}
                 value={value}
                 onChange={(e) => onChange(field.name, e.target.value)}
-                className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white  disabled:opacity-50"
               >
                 {field.options?.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -95,50 +98,59 @@ export const ProviderConfigurationFields: React.FC<ProviderConfigurationFieldsPr
                 ))}
               </select>
               {field.description && (
-                <p className="text-[11px] text-slate-400 mt-1">{field.description}</p>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  {field.description}
+                </p>
               )}
             </div>
           );
         }
 
-        if (field.type === 'textarea') {
+        if (field.type === "textarea") {
           return (
             <div key={field.name}>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                {field.label} {field.required && <span className="text-rose-500">*</span>}
+                {field.label}{" "}
+                {field.required && <span className="text-rose-500">*</span>}
               </label>
               <textarea
                 rows={3}
                 disabled={disabled}
                 value={value}
-                placeholder={field.placeholder || ''}
+                placeholder={field.placeholder || ""}
                 onChange={(e) => onChange(field.name, e.target.value)}
-                className="w-full px-3 py-2 text-xs font-mono border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                className="w-full px-3 py-2 text-xs font-mono border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white  disabled:opacity-50"
               />
               {field.description && (
-                <p className="text-[11px] text-slate-400 mt-1">{field.description}</p>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  {field.description}
+                </p>
               )}
             </div>
           );
         }
 
         const inputType =
-          field.type === 'password' ? 'password' : field.type === 'number' ? 'number' : 'text';
+          field.type === "password"
+            ? "password"
+            : field.type === "number"
+              ? "number"
+              : "text";
 
         return (
           <div key={field.name}>
             <Input
               disabled={disabled}
-              label={`${field.label} ${field.required ? '*' : ''}`}
+              label={`${field.label} ${field.required ? "*" : ""}`}
               type={inputType}
-              placeholder={field.placeholder || ''}
+              placeholder={field.placeholder || ""}
               value={value}
               onChange={(e) =>
                 onChange(
                   field.name,
-                  field.type === 'number'
-                    ? e.target.value === ''
-                      ? ''
+                  field.type === "number"
+                    ? e.target.value === ""
+                      ? ""
                       : Number(e.target.value)
                     : e.target.value,
                 )
@@ -146,7 +158,9 @@ export const ProviderConfigurationFields: React.FC<ProviderConfigurationFieldsPr
               required={field.required}
             />
             {field.description && (
-              <p className="text-[11px] text-slate-400 mt-1 -mt-0.5">{field.description}</p>
+              <p className="text-[11px] text-slate-400 mt-1 -mt-0.5">
+                {field.description}
+              </p>
             )}
           </div>
         );

@@ -8,6 +8,7 @@ import {
   Server,
   MessageSquare,
   Mail,
+  Smartphone,
 } from "lucide-react";
 
 interface ProviderListProps {
@@ -25,6 +26,7 @@ const ProviderItem: React.FC<{
   const isOperational = provider.status === "ACTIVE";
   const isSmtp = provider.slug === "smtp";
   const isWhatsApp = provider.type === "WHATSAPP";
+  const isSms = provider.type === "SMS";
 
   return (
     <div
@@ -45,13 +47,15 @@ const ProviderItem: React.FC<{
         <div className="flex items-center gap-3">
           <div
             className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shadow-sm ${
-              isWhatsApp
-                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                : isSmtp
-                  ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
-                  : isOperational
-                    ? "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300"
-                    : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+              isSms
+                ? "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300"
+                : isWhatsApp
+                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                  : isSmtp
+                    ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                    : isOperational
+                      ? "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300"
+                      : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
             }`}
           >
             {provider.logo && !imgError ? (
@@ -61,6 +65,8 @@ const ProviderItem: React.FC<{
                 className="w-6 h-6 object-contain"
                 onError={() => setImgError(true)}
               />
+            ) : isSms ? (
+              <Smartphone className="w-5 h-5" />
             ) : isWhatsApp ? (
               <MessageSquare className="w-5 h-5" />
             ) : isSmtp ? (
@@ -75,11 +81,13 @@ const ProviderItem: React.FC<{
             </h4>
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 uppercase">
-                {isWhatsApp
-                  ? "WhatsApp Business API"
-                  : isSmtp
-                    ? "SMTP Protocol"
-                    : "REST API"}
+                {isSms
+                  ? "SMS REST API"
+                  : isWhatsApp
+                    ? "WhatsApp Business API"
+                    : isSmtp
+                      ? "SMTP Protocol"
+                      : "REST API"}
               </span>
             </div>
           </div>

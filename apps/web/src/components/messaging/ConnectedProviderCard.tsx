@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import {
   Server,
   Mail,
+  Smartphone,
   Edit2,
   Trash2,
   Star,
@@ -52,6 +53,8 @@ export const ConnectedProviderCard: React.FC<ConnectedProviderCardProps> = ({
                 />
               ) : isSmtp ? (
                 <Server className="w-5 h-5 text-amber-600" />
+              ) : configuration.type === "SMS" ? (
+                <Smartphone className="w-5 h-5 text-sky-600" />
               ) : (
                 <Mail className="w-5 h-5 text-indigo-600" />
               )}

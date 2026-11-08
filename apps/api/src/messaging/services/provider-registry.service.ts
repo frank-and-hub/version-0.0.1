@@ -13,6 +13,15 @@ import {
   VonageWhatsAppAdapter,
   AiSensyWhatsAppAdapter,
 } from '../adapters/whatsapp-cloud.provider';
+import { TwilioSmsProviderAdapter } from '../adapters/twilio-sms.provider';
+import {
+  AwsSnsSmsProviderAdapter,
+  MessageBirdSmsProviderAdapter,
+  VonageSmsProviderAdapter,
+  PlivoSmsProviderAdapter,
+  TelnyxSmsProviderAdapter,
+  InfobipSmsProviderAdapter,
+} from '../adapters/additional-sms.providers';
 
 @Injectable()
 export class ProviderRegistryService {
@@ -29,6 +38,13 @@ export class ProviderRegistryService {
     private readonly gupshupProvider: GupshupWhatsAppAdapter,
     private readonly vonageProvider: VonageWhatsAppAdapter,
     private readonly aisensyProvider: AiSensyWhatsAppAdapter,
+    private readonly twilioSmsProvider: TwilioSmsProviderAdapter,
+    private readonly awsSnsSmsProvider: AwsSnsSmsProviderAdapter,
+    private readonly messageBirdSmsProvider: MessageBirdSmsProviderAdapter,
+    private readonly vonageSmsProvider: VonageSmsProviderAdapter,
+    private readonly plivoSmsProvider: PlivoSmsProviderAdapter,
+    private readonly telnyxSmsProvider: TelnyxSmsProviderAdapter,
+    private readonly infobipSmsProvider: InfobipSmsProviderAdapter,
   ) {
     this.registerAdapter(this.smtpProvider);
     this.registerAdapter(this.sendgridProvider);
@@ -40,6 +56,13 @@ export class ProviderRegistryService {
     this.registerAdapter(this.gupshupProvider);
     this.registerAdapter(this.vonageProvider);
     this.registerAdapter(this.aisensyProvider);
+    this.registerAdapter(this.twilioSmsProvider);
+    this.registerAdapter(this.awsSnsSmsProvider);
+    this.registerAdapter(this.messageBirdSmsProvider);
+    this.registerAdapter(this.vonageSmsProvider);
+    this.registerAdapter(this.plivoSmsProvider);
+    this.registerAdapter(this.telnyxSmsProvider);
+    this.registerAdapter(this.infobipSmsProvider);
 
     // Register all preset SMTP email providers so they are immediately fully functional!
     for (const slug of Object.keys(PRESET_SMTP_PROVIDERS)) {

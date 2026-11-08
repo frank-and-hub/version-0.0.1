@@ -342,7 +342,7 @@ export default function KnowledgeGraphPage() {
                     value={pathFrom}
                     onChange={(e) => setPathFrom(e.target.value)}
                     placeholder="e.g. AuthService or UsersController"
-                    className="w-full px-3 py-2 text-xs border rounded-lg bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 text-xs border rounded-lg bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white "
                   />
                 </div>
                 <ArrowRight className="w-4 h-4 text-slate-400 hidden sm:block mt-5" />
@@ -355,7 +355,7 @@ export default function KnowledgeGraphPage() {
                     value={pathTo}
                     onChange={(e) => setPathTo(e.target.value)}
                     placeholder="e.g. PrismaService or ValkeyService"
-                    className="w-full px-3 py-2 text-xs border rounded-lg bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 text-xs border rounded-lg bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white "
                   />
                 </div>
                 <div className="mt-5 w-full sm:w-auto">
@@ -457,7 +457,7 @@ export default function KnowledgeGraphPage() {
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
                   placeholder="Type to search symbols (e.g. UserRole, TransformInterceptor)..."
-                  className="w-full px-3 py-2 text-xs border rounded-lg bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 text-xs border rounded-lg bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white "
                 />
 
                 <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-80 overflow-y-auto">

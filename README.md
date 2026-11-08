@@ -43,7 +43,7 @@ version-0.0.1/
 │   │   │   ├── app/
 │   │   │   │   ├── admin/           # Admin Panel (Role Guarded: SUPER_ADMIN, ADMIN, MODERATOR)
 │   │   │   │   │   ├── dashboard/   # Module 1: System overview & metrics
-│   │   │   │   │   ├── messaging/   # Multi-Provider Messaging Platform (Phase 1: Email)
+│   │   │   │   │   ├── messaging/   # Multi-Provider Messaging Platform (Email, WhatsApp, Twilio SMS)
 │   │   │   │   │   ├── roles/       # Module 2: Roles & permissions management
 │   │   │   │   │   ├── users/       # Module 3: Full user management data table
 │   │   │   │   │   ├── moderators/  # Module 4: Moderator management
@@ -410,21 +410,22 @@ pnpm mobile:build:apk
 
 ---
 
-### 11. Multi-Provider Messaging Platform (Phase 1, Phase 2 & Phase 3)
+### 11. Multi-Provider Messaging Platform (Phases 1, 2, 3 & 4: Email, WhatsApp & Twilio SMS)
 
-The platform provides a scalable, enterprise multi-tenant messaging router with credential encryption, dynamic configuration schemas, templating engine, Valkey background queues, cryptographic webhook verification, real-time delivery telemetry, and official Meta WhatsApp Business Cloud API integration.
+The platform provides a scalable, enterprise multi-tenant messaging router with credential encryption, dynamic configuration schemas, templating engine, Valkey background queues, cryptographic webhook verification, real-time delivery telemetry, official Meta WhatsApp Business Cloud API integration, and official Twilio Programmable SMS with automated TCPA/CTIA compliance.
 
 #### Architecture Highlights
 1. **Global Provider Registry (`providers` table):**
-   - Seeded with 9 multi-channel providers (`smtp`, `sendgrid`, `amazon-ses`, `mailgun`, `mailchimp-transactional`, `brevo`, `postmark`, `resend`, and `whatsapp-cloud`).
-   - Fully operational adapters for **SMTP**, **SendGrid v3 REST API**, pre-scaled SMTP providers (**Amazon SES**, **Mailgun**, **Mandrill**, **Brevo**, **Postmark**, and **Resend**), and **Meta WhatsApp Business Cloud API**.
+   - Seeded with 23 multi-channel providers across Email (8 providers), WhatsApp (8 providers), and SMS (7 providers).
+   - Fully operational adapters for **Email** (SMTP, SendGrid, Amazon SES, Mailgun, Mandrill, Brevo, Postmark, Resend), **WhatsApp** (Meta Cloud API, Interakt, WATI, Twilio, Infobip, Gupshup, Vonage, AISensy), and **SMS** (**Twilio**, **AWS SNS**, **MessageBird**, **Vonage**, **Plivo**, **Telnyx**, and **Infobip**).
 2. **Multi-Tenant Encrypted Credentials (`user_provider_configurations` table):**
    - AES-256-GCM symmetric encryption with randomized 16-byte initialization vectors and auth tags.
-   - Plaintext credentials and secrets (API keys, Meta Access Tokens, App Secrets) are stripped and masked before serialization to API responses.
+   - Plaintext credentials and secrets (API keys, Meta Access Tokens, Twilio Auth Tokens, App Secrets) are stripped and masked before serialization to API responses.
    - Per-user configuration isolation with default provider selection.
 3. **Template Engine & Variable Mapping:**
    - Transactional email templates with dynamic `{{variable}}` token extraction and handlebar interpolation for subjects and HTML bodies.
    - WhatsApp message templates with component parameter mapping, category tracking (MARKETING, UTILITY, AUTHENTICATION), and direct synchronization from Meta Graph API.
+   - SMS message templates with live variable extraction, preview chips, and segment calculation.
 4. **Valkey Background Queue & Exponential Backoff (`EmailQueueService` & `EmailWorkerService`):**
    - High-throughput asynchronous dispatching via Valkey atomic `LPUSH` / `RPOPLPUSH`.
    - Automatic retry handling with dead-letter queue (DLQ) support.
@@ -442,6 +443,25 @@ The platform provides a scalable, enterprise multi-tenant messaging router with 
      - `GET /api/webhooks/messaging/whatsapp/:configurationUuid`: Verifies `hub.mode === 'subscribe'` and `hub.verify_token`, responding with plain text `hub.challenge`.
      - `POST /api/webhooks/messaging/whatsapp/:configurationUuid`: Cryptographic HMAC-SHA256 signature verification (`X-Hub-Signature-256`) against decrypted Meta App Secret.
    - **Two-Way Real-Time Chat & Threading (`WhatsAppMessagingTab`):** Complete customer inbox with chronological chat history, delivery receipts (`sent`, `delivered`, `read`, `failed`), and dynamic template variable composer.
+7. **Phase 4: Multi-Provider SMS Platform (Twilio, AWS SNS, MessageBird, Vonage, Plivo, Telnyx & Infobip):**
+   - **Multi-Provider SMS Routing:** Seamlessly connect and route dispatches through 7 enterprise SMS gateways:
+     - **Twilio Programmable Messaging:** Full carrier routing, Status Callbacks, and Inbound messaging.
+     - **Amazon Web Services (AWS SNS):** High-scale transactional and promotional SMS with region selection and IAM credentials.
+     - **MessageBird (Bird):** Tier-1 direct carrier connection across 240+ global networks.
+     - **Vonage SMS (Nexmo):** Adaptive routing SMS with real-time delivery receipts.
+     - **Plivo SMS:** Carrier connectivity with localized number pooling and high throughput.
+     - **Telnyx SMS:** Mission-critical private IP network with 10DLC support.
+     - **Infobip SMS:** Enterprise omnichannel communications platform.
+   - **Character & Segment Counter:** Live computation distinguishing **GSM 7-bit** (160 single / 153 concatenated) and **UCS-2 Unicode** (70 single / 67 concatenated), providing character counts, segments, remaining chars, and encoding warnings.
+   - **Scheduled SMS Dispatch:** Schedule messages for future dates/times with real-time pre-dispatch cancellation (`POST /api/messaging/sms/:uuid/cancel`).
+   - **Controlled Bulk SMS Dispatch:** Bulk dispatch with deduplication, opt-out validation, and recipient tracking.
+   - **TCPA / CTIA Opt-Out & Suppression List:**
+     - Automatically intercepts incoming keywords (`STOP`, `UNSUBSCRIBE`, `CANCEL`, `QUIT`, `END`) to add the recipient to the `sms_opt_outs` database suppression list.
+     - Automatically removes recipient on opt-in keywords (`START`, `YES`, `UNSTOP`).
+     - Rejects any dispatch attempt to opted-out recipients prior to contacting provider APIs.
+     - Manual opt-out addition and removal UI in the Admin Panel.
+   - **Cryptographic Webhook Verification:** Twilio HMAC-SHA1 signature verification (`X-Twilio-Signature`) over full URL and sorted parameters.
+   - **Two-Way Conversations:** Automatically groups inbound and outbound messages into threaded conversations (`sms_conversations` table) with real-time reply composer.
 
 #### Webhook Setup Instructions
 
@@ -459,10 +479,36 @@ The platform provides a scalable, enterprise multi-tenant messaging router with 
 4. Under **Webhook fields**, click **Manage** and subscribe to `messages`.
 5. Incoming replies, status deliveries (`sent`, `delivered`, `read`), and failure reasons will be verified via HMAC-SHA256 and reflected in real-time.
 
-#### API Endpoints (Messaging, Webhooks & WhatsApp)
+##### Twilio SMS Webhooks
+1. In the **Twilio Console**, navigate to **Phone Numbers → Manage → Active Numbers** (or your **Messaging Service**).
+2. Under **A CALL COMES IN / A MESSAGE COMES IN**, set **A Message Comes In** to **Webhook (HTTP POST)**.
+3. In the URL field, paste your generated Inbound Webhook URL:
+   `https://your-domain.com/api/webhooks/messaging/sms/twilio/<configuration-uuid>/inbound`
+4. Under **Status Callback URL**, paste your generated Status Callback URL:
+   `https://your-domain.com/api/webhooks/messaging/sms/twilio/<configuration-uuid>/status`
+5. Save changes. Twilio delivery receipts (`sent`, `delivered`, `undelivered`, `failed`) and inbound customer replies/opt-outs will now process automatically with HMAC-SHA1 verification.
+
+#### API Endpoints (Messaging, Webhooks, WhatsApp & SMS)
 * `POST /api/webhooks/messaging/email/:configurationUuid`: Public webhook receiver for SendGrid/email providers.
 * `GET /api/webhooks/messaging/whatsapp/:configurationUuid`: Public Meta webhook verification handshake (`hub.challenge`).
 * `POST /api/webhooks/messaging/whatsapp/:configurationUuid`: Public Meta webhook event receiver (HMAC-SHA256 verified).
+* `POST /api/webhooks/messaging/sms/twilio/:configurationUuid/status`: Public Twilio status callback webhook receiver (HMAC-SHA1 verified).
+* `POST /api/webhooks/messaging/sms/twilio/:configurationUuid/inbound`: Public Twilio inbound SMS webhook receiver (TCPA opt-out auto-detection).
+* `POST /api/messaging/sms/send`: Send or schedule a single SMS message.
+* `POST /api/messaging/sms/bulk`: Dispatch controlled bulk SMS messages.
+* `POST /api/messaging/sms/:uuid/cancel`: Cancel a scheduled SMS message before dispatch.
+* `POST /api/messaging/sms/calculate-segments`: Calculate character count and segments preview.
+* `GET /api/messaging/sms`: Get SMS message history with pagination and status filters.
+* `GET /api/messaging/sms/stats`: Get aggregated SMS delivery statistics.
+* `GET /api/messaging/sms/conversations`: List two-way SMS conversation threads.
+* `GET /api/messaging/sms/conversations/:uuid/messages`: Get messages in an SMS conversation thread.
+* `GET /api/messaging/sms/opt-outs`: Get opted-out suppression phone numbers.
+* `POST /api/messaging/sms/opt-outs`: Manually add phone number to opt-out list.
+* `DELETE /api/messaging/sms/opt-outs/:phone`: Remove phone number from opt-out list (re-opt-in).
+* `GET /api/messaging/sms/templates`: List saved SMS templates.
+* `POST /api/messaging/sms/templates`: Create an SMS template with variable extraction.
+* `PATCH /api/messaging/sms/templates/:uuid`: Update an SMS template.
+* `DELETE /api/messaging/sms/templates/:uuid`: Delete an SMS template.
 * `GET /api/messaging/whatsapp/conversations`: List customer WhatsApp conversations with 24-hr session status.
 * `GET /api/messaging/whatsapp/conversations/:conversationUuid/messages`: Chronological conversation message history.
 * `POST /api/messaging/whatsapp/messages/send`: Send outbound WhatsApp message (Session text/media or Template).

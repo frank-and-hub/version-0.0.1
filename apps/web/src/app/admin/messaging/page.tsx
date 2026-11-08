@@ -15,6 +15,8 @@ import {
   EmailMessageDetailsModal,
   EmailAnalyticsDashboardTab,
   WhatsAppMessagingTab,
+  SmsMessagingTab,
+  MessagingTemplatesTab,
 } from "@/components/messaging";
 import {
   Mail,
@@ -36,6 +38,7 @@ import {
   Eye,
   X,
   MessageSquare,
+  Smartphone,
 } from "lucide-react";
 
 interface EmailTemplate {
@@ -74,6 +77,7 @@ export default function MessagingPage() {
     | "overview"
     | "providers"
     | "whatsapp"
+    | "sms"
     | "webhooks"
     | "analytics"
     | "templates"
@@ -100,9 +104,9 @@ export default function MessagingPage() {
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const [editingConfig, setEditingConfig] =
     useState<UserProviderConfiguration | null>(null);
-  const [modalChannel, setModalChannel] = useState<"EMAIL" | "WHATSAPP">(
-    "EMAIL",
-  );
+  const [modalChannel, setModalChannel] = useState<
+    "EMAIL" | "WHATSAPP" | "SMS"
+  >("EMAIL");
 
   // Template Modal state
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
@@ -154,14 +158,22 @@ export default function MessagingPage() {
     loadData();
   }, []);
 
-  const openConnectModal = (channel: "EMAIL" | "WHATSAPP" = "EMAIL") => {
+  const openConnectModal = (
+    channel: "EMAIL" | "WHATSAPP" | "SMS" = "EMAIL",
+  ) => {
     setModalChannel(channel);
     setEditingConfig(null);
     setIsConnectModalOpen(true);
   };
 
   const handleEditConfig = (config: UserProviderConfiguration) => {
-    setModalChannel((config.type as any) === "WHATSAPP" ? "WHATSAPP" : "EMAIL");
+    setModalChannel(
+      (config.type as any) === "WHATSAPP"
+        ? "WHATSAPP"
+        : (config.type as any) === "SMS"
+          ? "SMS"
+          : "EMAIL",
+    );
     setEditingConfig(config);
     setIsConnectModalOpen(true);
   };
@@ -332,9 +344,9 @@ export default function MessagingPage() {
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
               Multi-Provider Messaging Platform
             </h1>
-            <Badge variant="indigo">
+            {/* <Badge variant="indigo">
               Phase 1, 2 & 3: Email + Webhooks + WhatsApp
-            </Badge>
+            </Badge> */}
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Unified dynamic messaging with Meta WhatsApp Business Cloud API,
@@ -367,6 +379,11 @@ export default function MessagingPage() {
             size="sm"
             channel="WHATSAPP"
           />
+          <ConnectProviderButton
+            onClick={() => openConnectModal("SMS")}
+            size="sm"
+            channel="SMS"
+          />
         </div>
       </div>
 
@@ -398,11 +415,12 @@ export default function MessagingPage() {
 
       {/* Navigation Tabs (Pill / Segmented Controls - No Horizontal Scroll) */}
       <div className="bg-slate-100/80 dark:bg-slate-900/80 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-800">
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-1.5">
           {[
             { id: "overview", label: "Overview", icon: Server },
             { id: "providers", label: "Providers", icon: Key },
             { id: "whatsapp", label: "WhatsApp", icon: MessageSquare },
+            { id: "sms", label: "SMS", icon: Smartphone },
             { id: "webhooks", label: "Webhooks", icon: Webhook },
             { id: "analytics", label: "Analytics", icon: TrendingUp },
             { id: "templates", label: "Templates", icon: FileText },
@@ -628,6 +646,16 @@ export default function MessagingPage() {
         />
       )}
 
+      {/* TAB: SMS PLATFORM */}
+      {activeTab === "sms" && (
+        <SmsMessagingTab
+          configurations={configurations}
+          onOpenConnectModal={(ch) => openConnectModal(ch || "SMS")}
+          onEditConfig={handleEditConfig}
+          onRefresh={loadData}
+        />
+      )}
+
       {/* TAB: WEBHOOKS & DELIVERY EVENTS */}
       {activeTab === "webhooks" && (
         <WebhookManagerTab configurations={configurations} />
@@ -638,89 +666,26 @@ export default function MessagingPage() {
         <EmailAnalyticsDashboardTab configurations={configurations} />
       )}
 
-      {/* TAB: TEMPLATES */}
+      {/* TAB: TEMPLATES STUDIO (EMAIL, WHATSAPP, SMS WITH REAL-TIME PREVIEWS) */}
       {activeTab === "templates" && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Email Templates
-              </h3>
-              <p className="text-xs text-slate-500">
-                Manage reusable dynamic transactional email templates with
-                variable placeholders
-              </p>
-            </div>
-            <Button
-              size="sm"
-              variant="primary"
-              onClick={() => setIsTemplateModalOpen(true)}
-            >
-              <Plus className="w-4 h-4 mr-1" /> New Template
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {templates.map((tpl) => (
-              <Card
-                key={tpl.template_uuid}
-                className="p-5 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                      {tpl.name}
-                    </h4>
-                    <Badge variant={tpl.is_active ? "success" : "default"}>
-                      {tpl.is_active ? "Active" : "Draft"}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-slate-500 mb-3 line-clamp-2">
-                    {tpl.description || "Transactional notification template."}
-                  </p>
-                  <div className="bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-lg text-[11px] mb-3">
-                    <span className="font-semibold text-slate-500">
-                      Subject:{" "}
-                    </span>
-                    <span className="text-slate-800 dark:text-slate-200">
-                      {tpl.subject}
-                    </span>
-                  </div>
-
-                  {Array.isArray(tpl.variables) && tpl.variables.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-4">
-                      {tpl.variables.map((v) => (
-                        <span
-                          key={v}
-                          className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300"
-                        >
-                          {`{{${v}}}`}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                  <button
-                    onClick={() => {
-                      setComposeForm((prev) => ({
-                        ...prev,
-                        template_uuid: tpl.template_uuid,
-                        subject: tpl.subject,
-                        html_content: tpl.html_content,
-                      }));
-                      setActiveTab("compose");
-                    }}
-                    className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
-                  >
-                    Use in Composer →
-                  </button>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
+        <MessagingTemplatesTab
+          configurations={configurations}
+          onUseInComposer={(channel, tpl) => {
+            if (channel === "EMAIL") {
+              setComposeForm((prev) => ({
+                ...prev,
+                template_uuid: tpl.template_uuid,
+                subject: tpl.subject,
+                html_content: tpl.html_content,
+              }));
+              setActiveTab("compose");
+            } else if (channel === "WHATSAPP") {
+              setActiveTab("whatsapp");
+            } else if (channel === "SMS") {
+              setActiveTab("sms");
+            }
+          }}
+        />
       )}
 
       {/* TAB 4: COMPOSE & SEND */}
@@ -743,7 +708,7 @@ export default function MessagingPage() {
                   Select Provider Configuration
                 </label>
                 <select
-                  className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white "
                   value={composeForm.provider_configuration_uuid}
                   onChange={(e) =>
                     setComposeForm({
@@ -770,7 +735,7 @@ export default function MessagingPage() {
                   Load From Template (Optional)
                 </label>
                 <select
-                  className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white "
                   value={composeForm.template_uuid}
                   onChange={(e) => {
                     const tpl = templates.find(
@@ -826,7 +791,7 @@ export default function MessagingPage() {
               </label>
               <textarea
                 rows={6}
-                className="w-full px-3 py-2 text-xs font-mono border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 text-xs font-mono border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white "
                 placeholder="<p>Hello world! This is a transactional notification.</p>"
                 value={composeForm.html_content}
                 onChange={(e) =>
@@ -1067,7 +1032,7 @@ export default function MessagingPage() {
                 </label>
                 <textarea
                   rows={6}
-                  className="w-full px-3 py-2 text-xs font-mono border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 text-xs font-mono border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white "
                   placeholder="<p>Hi {{first_name}}, please use this code: <b>{{token}}</b></p>"
                   value={templateForm.html_content}
                   onChange={(e) =>

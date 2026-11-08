@@ -42,15 +42,17 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
   onCancel,
 }) => {
   const isWhatsApp = provider.type === 'WHATSAPP';
+  const isSms = provider.type === 'SMS';
+  const isEmail = !isWhatsApp && !isSms;
 
   const [configurationName, setConfigurationName] = useState(
     initialValues?.configuration_name || `${provider.name} Connection`,
   );
   const [senderName, setSenderName] = useState(
-    initialValues?.sender_name || (isWhatsApp ? 'WhatsApp Official Business' : 'Antigravity Platform'),
+    initialValues?.sender_name || (isWhatsApp ? 'WhatsApp Official Business' : isSms ? 'Twilio SMS Alerts' : 'Antigravity Platform'),
   );
   const [senderEmail, setSenderEmail] = useState(
-    initialValues?.sender_email || (isWhatsApp ? '' : 'notifications@antigravity.dev'),
+    initialValues?.sender_email || (isWhatsApp || isSms ? '' : 'notifications@antigravity.dev'),
   );
   const [senderPhone, setSenderPhone] = useState(
     initialValues?.sender_phone || initialValues?.credentials?.sender_phone || '',
@@ -99,7 +101,7 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
     try {
       const credsToTest = {
         ...credentials,
-        ...(isWhatsApp && senderPhone ? { sender_phone: senderPhone } : {}),
+        ...((isWhatsApp || isSms) && senderPhone ? { sender_phone: senderPhone } : {}),
       };
 
       const res: any = await api.post('/messaging/provider-configurations/test', {
@@ -133,13 +135,13 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
       const payload: any = {
         configuration_name: configurationName,
         sender_name: senderName,
-        sender_email: isWhatsApp ? undefined : senderEmail,
-        sender_phone: isWhatsApp ? senderPhone : undefined,
-        reply_to: isWhatsApp ? undefined : (replyTo || undefined),
+        sender_email: isEmail ? senderEmail : undefined,
+        sender_phone: (isWhatsApp || isSms) ? senderPhone : undefined,
+        reply_to: isEmail ? (replyTo || undefined) : undefined,
         is_default: isDefault,
         credentials: {
           ...credentials,
-          ...(isWhatsApp && senderPhone ? { sender_phone: senderPhone } : {}),
+          ...((isWhatsApp || isSms) && senderPhone ? { sender_phone: senderPhone } : {}),
         },
       };
 
@@ -232,7 +234,34 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
       )}
 
       {/* Channel Specific Header Fields */}
-      {isWhatsApp ? (
+      {isSms ? (
+        <div className="space-y-3">
+          <Input
+            label="SMS Configuration Name *"
+            placeholder="e.g., Twilio Production SMS"
+            value={configurationName}
+            onChange={(e) => setConfigurationName(e.target.value)}
+            required
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              label="Sender Display Name *"
+              placeholder="Acme Alerts"
+              value={senderName}
+              onChange={(e) => setSenderName(e.target.value)}
+              required
+            />
+            <Input
+              label="Twilio Sender Phone Number (E.164) *"
+              placeholder="+1 (555) 019-2834"
+              value={senderPhone}
+              onChange={(e) => setSenderPhone(e.target.value)}
+              required
+            />
+          </div>
+        </div>
+      ) : isWhatsApp ? (
         <div className="space-y-3">
           <Input
             label="WhatsApp Configuration Name *"
