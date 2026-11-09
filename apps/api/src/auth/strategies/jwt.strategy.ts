@@ -4,6 +4,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../database/prisma.service';
 import { ValkeyService } from '../../cache/valkey.service';
+import { PermissionsService } from '../services/permissions.service';
 import { TokenPayload, UserRole } from '@monorepo/shared-types';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
     private readonly valkeyService: ValkeyService,
+    private readonly permissionsService: PermissionsService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -49,18 +51,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User account is inactive or suspended');
     }
 
-    // 3. Retrieve user permissions based on role
-    let permissions: string[] = [];
-    if (user.role === UserRole.SUPER_ADMIN) {
-      const allPerms = await this.prisma.permission.findMany({ select: { code: true } });
-      permissions = allPerms.map((p) => p.code);
-    } else {
-      const rolePerms = await this.prisma.rolePermission.findMany({
-        where: { role: user.role },
-        include: { permission: true },
-      });
-      permissions = rolePerms.map((rp) => rp.permission.code);
-    }
+    // 3. Retrieve live effective permissions (combining role permissions + user grants - user denials)
+    const permissions = await this.permissionsService.getEffectivePermissions(
+      user.user_uuid,
+      user.role as UserRole,
+    );
 
     return {
       ...user,

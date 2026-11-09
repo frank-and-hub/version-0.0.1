@@ -1,37 +1,93 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Optional } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { PermissionsService } from '../auth/services/permissions.service';
 import { CreateMenuItemDto, UpdateMenuItemDto, UserRole, MenuItem } from '@monorepo/shared-types';
 import { buildMenuTree, detectCircularReference } from '@monorepo/shared-utils';
 
 @Injectable()
 export class NavigationService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly permissionsService?: PermissionsService,
+  ) {}
 
   // 1. Get filtered navigation tree for current authenticated user
-  async getUserMenu(role: UserRole, permissions: string[] = []): Promise<MenuItem[]> {
+  async getUserMenu(
+    role: UserRole,
+    permissions: string[] = [],
+    userUuid?: string,
+  ): Promise<MenuItem[]> {
+    // 1. Resolve live effective permissions if userUuid is provided
+    let effectivePerms = permissions;
+    if (userUuid && this.permissionsService) {
+      try {
+        effectivePerms = await this.permissionsService.getEffectivePermissions(userUuid, role);
+      } catch {
+        effectivePerms = permissions;
+      }
+    }
+
     const allActive = await this.prisma.menuItem.findMany({
       where: { is_active: true },
       orderBy: { display_order: 'asc' },
     });
 
-    // Filter items permitted for this user's role and granular permissions
-    const permitted = allActive.filter((item) => {
-      // Role-based visibility
-      const allowedRoles = item.allowed_roles.split(',').map((r) => r.trim());
-      const hasRoleClearance =
-        role === UserRole.SUPER_ADMIN || allowedRoles.includes(role);
-
-      if (!hasRoleClearance) return false;
-
-      // Granular permission visibility
-      if (item.required_permission && role !== UserRole.SUPER_ADMIN) {
-        if (!permissions.includes(item.required_permission)) {
-          return false;
-        }
+    const isDirectlyPermitted = (item: (typeof allActive)[number]): boolean => {
+      if (role === UserRole.SUPER_ADMIN) {
+        return true;
       }
 
-      return true;
-    });
+      if (item.required_permission) {
+        if (this.permissionsService) {
+          return this.permissionsService.hasPermission(
+            effectivePerms,
+            item.required_permission,
+            role,
+          );
+        }
+        return effectivePerms.includes(item.required_permission);
+      }
+
+      // If no granular permission is required, fall back to allowed_roles check
+      const allowedRoles = item.allowed_roles.split(',').map((r) => r.trim());
+      return allowedRoles.includes(role);
+    };
+
+    // Index children by parent_uuid
+    const childrenByParent = new Map<string, typeof allActive>();
+    for (const item of allActive) {
+      if (item.parent_uuid) {
+        const list = childrenByParent.get(item.parent_uuid) || [];
+        list.push(item);
+        childrenByParent.set(item.parent_uuid, list);
+      }
+    }
+
+    // Determine visibility recursively:
+    // A parent item should appear ONLY when the user has access to at least one permitted child,
+    // unless the parent has its own independently accessible page and direct clearance.
+    const isNodeVisible = (item: (typeof allActive)[number]): boolean => {
+      const children = childrenByParent.get(item.menu_uuid) || [];
+      const hasDefinedChildren = children.length > 0;
+
+      if (hasDefinedChildren) {
+        const hasAnyVisibleChild = children.some((child) => isNodeVisible(child));
+        if (hasAnyVisibleChild) {
+          return true;
+        }
+
+        // Empty parent menus must NOT appear unless parent has an independent accessible page
+        const hasIndependentPage = Boolean(
+          item.route && item.route !== '#' && item.route !== '',
+        );
+        return hasIndependentPage && isDirectlyPermitted(item);
+      }
+
+      // Leaf node
+      return isDirectlyPermitted(item);
+    };
+
+    const permitted = allActive.filter((item) => isNodeVisible(item));
 
     const mapped: MenuItem[] = permitted.map((item) => ({
       menu_uuid: item.menu_uuid,
@@ -47,7 +103,31 @@ export class NavigationService {
       updated_at: item.updated_at,
     }));
 
-    return buildMenuTree(mapped);
+    const tree = buildMenuTree(mapped);
+
+    // Filter out any empty parent nodes that might have 0 children remaining after tree building
+    const pruneEmptyParents = (nodes: MenuItem[]): MenuItem[] => {
+      return nodes.filter((node) => {
+        const hadChildrenInDb = (childrenByParent.get(node.menu_uuid) || []).length > 0;
+        if (hadChildrenInDb) {
+          const visibleChildren = node.children || [];
+          if (visibleChildren.length === 0) {
+            const hasIndependentPage = Boolean(
+              node.route && node.route !== '#' && node.route !== '',
+            );
+            return hasIndependentPage && isDirectlyPermitted({
+              ...node,
+              allowed_roles: node.allowed_roles.join(','),
+            } as any);
+          }
+          node.children = pruneEmptyParents(visibleChildren);
+          return true;
+        }
+        return true;
+      });
+    };
+
+    return pruneEmptyParents(tree);
   }
 
   // 2. Admin CRUD methods for Dynamic Sidebar Management

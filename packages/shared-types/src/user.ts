@@ -26,6 +26,15 @@ export const PERMISSIONS = {
   ERROR_LOGS_READ: 'error_logs.read',
   SETTINGS_MANAGE: 'settings.manage',
   MODERATORS_MANAGE: 'moderators.manage',
+  MESSAGING_MANAGE: 'messaging.manage',
+  MESSAGING_MESSAGES: 'messaging.messages',
+  MESSAGING_CAMPAIGNS: 'messaging.campaigns',
+  MESSAGING_CONTACTS: 'messaging.contacts',
+  MESSAGING_TEMPLATES: 'messaging.templates',
+  MESSAGING_PROVIDERS: 'messaging.providers',
+  MESSAGING_ANALYTICS: 'messaging.analytics',
+  MESSAGING_WEBHOOKS: 'messaging.webhooks',
+  MESSAGING_SETTINGS: 'messaging.settings',
 } as const;
 
 export type PermissionCode = typeof PERMISSIONS[keyof typeof PERMISSIONS];
@@ -41,18 +50,53 @@ export interface Permission {
   createdAt?: string | Date;
 }
 
+export interface UserPermission {
+  user_permission_uuid: string;
+  user_uuid: string;
+  permission_uuid: string;
+  is_granted: boolean;
+  granted_by_uuid?: string | null;
+  permission?: Permission;
+  created_at: string | Date;
+  updated_at: string | Date;
+}
+
+export interface EffectivePermissionsDto {
+  role: UserRole;
+  effective_permissions: string[];
+  role_permissions: string[];
+  user_grants: string[];
+  user_denials: string[];
+  version: number;
+}
+
 export interface Role {
   role_uuid: string;
   roleUuid?: string;
+  code: string;
   name: string;
-  description?: string;
+  description?: string | null;
   is_system: boolean;
   isSystem?: boolean;
   permissions?: Permission[];
-  created_at: string | Date;
+  userCount?: number;
+  created_at?: string | Date;
   createdAt?: string | Date;
-  updated_at: string | Date;
+  updated_at?: string | Date;
   updatedAt?: string | Date;
+}
+
+export interface CreateRoleDto {
+  name: string;
+  code: string;
+  description?: string;
+  permissions?: string[];
+}
+
+export interface UpdateRoleDto {
+  name?: string;
+  description?: string;
+  permissions?: string[];
 }
 
 export interface User {

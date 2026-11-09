@@ -1,14 +1,16 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, LoginDto, RegisterDto, AuthResponse, UserRole } from '@monorepo/shared-types';
 import { api } from '@/lib/api';
 
 interface AuthContextType {
   user: User | null;
+  permissions: string[];
   isAuthenticated: boolean;
   isLoading: boolean;
+  hasPermission: (permissionCode: string) => boolean;
   login: (dto: LoginDto) => Promise<void>;
   register: (dto: RegisterDto) => Promise<void>;
   logout: () => Promise<void>;
@@ -22,10 +24,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const userRef = useRef<User | null>(null);
 
-  const loadUser = async () => {
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  const loadUser = useCallback(async () => {
     const token = api.getAccessToken();
     if (!token) {
+      setUser(null);
       setIsLoading(false);
       return;
     }
@@ -39,17 +48,77 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadUser();
-  }, []);
+  }, [loadUser]);
 
-  const redirectByRole = (role: UserRole) => {
+  // Real-time Permission Synchronization via SSE
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let sseTimeout: NodeJS.Timeout;
+
+    const connectSSE = () => {
+      try {
+        if (eventSourceRef.current) {
+          eventSourceRef.current.close();
+        }
+
+        const sseUrl = `${api.getBaseUrl()}/auth/permissions/stream`;
+        const es = new EventSource(sseUrl);
+        eventSourceRef.current = es;
+
+        es.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            const currentUser = userRef.current;
+            if (!currentUser) return;
+
+            // Check if broadcast targets this user or role
+            const affectsRole = !data.role || data.role === currentUser.role;
+            const affectsUser = !data.userUuid || data.userUuid === currentUser.user_uuid;
+
+            if (affectsRole || affectsUser) {
+              // Immediately refresh user effective permissions
+              loadUser();
+              window.dispatchEvent(
+                new CustomEvent('auth:permissions-updated', { detail: data }),
+              );
+            }
+          } catch {
+            // ignore heartbeat or parse errors
+          }
+        };
+
+        es.onerror = () => {
+          es.close();
+          // Exponential backoff reconnect
+          sseTimeout = setTimeout(connectSSE, 5000);
+        };
+      } catch {
+        sseTimeout = setTimeout(connectSSE, 10000);
+      }
+    };
+
+    connectSSE();
+
+    return () => {
+      if (sseTimeout) clearTimeout(sseTimeout);
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+    };
+  }, [loadUser]);
+
+  const redirectByRole = (role: UserRole, permissions: string[] = []) => {
     if (
       role === UserRole.SUPER_ADMIN ||
       role === UserRole.ADMIN ||
-      role === UserRole.MODERATOR
+      role === UserRole.MODERATOR ||
+      permissions.length > 0
     ) {
       router.push('/admin/dashboard');
     } else {
@@ -61,7 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const res = await api.post<AuthResponse>('/auth/login', dto);
     api.setTokens(res.tokens.accessToken, res.tokens.refreshToken);
     setUser(res.user);
-    redirectByRole(res.user.role);
+    redirectByRole(res.user.role, res.user.permissions || []);
   };
 
   const register = async (dto: RegisterDto) => {
@@ -87,12 +156,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await loadUser();
   };
 
+  const permissions = user?.permissions || [];
+
+  const hasPermission = useCallback(
+    (code: string): boolean => {
+      if (!user) return false;
+      if (user.role === UserRole.SUPER_ADMIN) return true;
+      const list = user.permissions || [];
+      if (list.includes(code)) return true;
+      // Master inheritance
+      if (list.includes('messaging.manage') && code.startsWith('messaging.')) return true;
+      if (list.includes('roles.manage') && code === 'permissions.manage') return true;
+      if (code === 'users.read' && list.some((p) => p.startsWith('users.'))) return true;
+      return false;
+    },
+    [user],
+  );
+
   return (
     <AuthContext.Provider
       value={{
         user,
+        permissions,
         isAuthenticated: !!user,
         isLoading,
+        hasPermission,
         login,
         register,
         logout,

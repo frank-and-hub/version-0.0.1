@@ -40,7 +40,15 @@ async function main() {
     { code: 'error_logs.read', name: 'View Error Logs', category: 'Audit & Compliance', description: 'Can inspect MongoDB application error logs' },
     { code: 'settings.manage', name: 'Manage Settings', category: 'System', description: 'Can update application default settings' },
     { code: 'moderators.manage', name: 'Manage Moderators', category: 'Access Control', description: 'Can assign and supervise moderators' },
-    { code: 'messaging.manage', name: 'Manage Messaging', category: 'Messaging', description: 'Can configure providers and send messages' },
+    { code: 'messaging.manage', name: 'Manage Messaging', category: 'Messaging', description: 'Can configure providers, send messages, and manage all messaging operations' },
+    { code: 'messaging.messages', name: 'View & Send Messages', category: 'Messaging', description: 'Can inspect message history and send direct messages' },
+    { code: 'messaging.campaigns', name: 'Manage Campaigns', category: 'Messaging', description: 'Can create and execute broadcast campaigns' },
+    { code: 'messaging.contacts', name: 'Manage Contacts', category: 'Messaging', description: 'Can manage contact lists and audience groups' },
+    { code: 'messaging.templates', name: 'Manage Templates', category: 'Messaging', description: 'Can create and edit multi-channel message templates' },
+    { code: 'messaging.providers', name: 'Manage Providers', category: 'Messaging', description: 'Can connect and configure messaging providers' },
+    { code: 'messaging.analytics', name: 'View Analytics', category: 'Messaging', description: 'Can view delivery rates, open rates, and performance analytics' },
+    { code: 'messaging.webhooks', name: 'Webhook Monitoring', category: 'Messaging', description: 'Can monitor provider status callbacks and events' },
+    { code: 'messaging.settings', name: 'Messaging Settings', category: 'Messaging', description: 'Can configure default messaging channels and rate limits' },
   ];
 
   const createdPermissions = new Map<string, string>();
@@ -56,11 +64,36 @@ async function main() {
     createdPermissions.set(p.code, created.permission_uuid);
   }
 
-  // 2. Map Permissions to Roles
+  // 2. Seed Dynamic Roles Table and Map Permissions
+  const coreRoles = [
+    { code: 'SUPER_ADMIN', name: 'Super Admin', description: 'Full unrestricted system clearance across all system modules', is_system: true },
+    { code: 'ADMIN', name: 'Administrator', description: 'System-wide operational administration and monitoring', is_system: true },
+    { code: 'MODERATOR', name: 'Moderator', description: 'Community moderation and user activity supervision', is_system: true },
+    { code: 'USER', name: 'Standard User', description: 'Standard authenticated member', is_system: true },
+  ];
+
+  const roleMap = new Map<string, string>();
+  for (const r of coreRoles) {
+    const createdRole = await prisma.roleDefinition.create({
+      data: {
+        code: r.code,
+        name: r.name,
+        description: r.description,
+        is_system: r.is_system,
+      },
+    });
+    roleMap.set(r.code, createdRole.role_uuid);
+  }
+
   // SUPER_ADMIN has ALL permissions
+  const saRoleUuid = roleMap.get('SUPER_ADMIN')!;
   for (const permUuid of createdPermissions.values()) {
     await prisma.rolePermission.create({
-      data: { role: Role.SUPER_ADMIN, permission_uuid: permUuid },
+      data: {
+        role_uuid: saRoleUuid,
+        role_code: 'SUPER_ADMIN',
+        permission_uuid: permUuid,
+      },
     });
   }
 
@@ -68,24 +101,36 @@ async function main() {
   const adminPermCodes = [
     'users.read', 'users.create', 'users.update', 'users.view_activity',
     'roles.manage', 'permissions.manage', 'navigation.manage', 'audit_logs.read', 'error_logs.read',
-    'settings.manage', 'moderators.manage', 'messaging.manage'
+    'settings.manage', 'moderators.manage', 'messaging.manage',
+    'messaging.messages', 'messaging.campaigns', 'messaging.contacts', 'messaging.templates',
+    'messaging.providers', 'messaging.analytics', 'messaging.webhooks', 'messaging.settings',
   ];
+  const adminRoleUuid = roleMap.get('ADMIN')!;
   for (const code of adminPermCodes) {
     const permUuid = createdPermissions.get(code);
     if (permUuid) {
       await prisma.rolePermission.create({
-        data: { role: Role.ADMIN, permission_uuid: permUuid },
+        data: {
+          role_uuid: adminRoleUuid,
+          role_code: 'ADMIN',
+          permission_uuid: permUuid,
+        },
       });
     }
   }
 
   // MODERATOR permissions
   const modPermCodes = ['users.read', 'users.update', 'users.view_activity'];
+  const modRoleUuid = roleMap.get('MODERATOR')!;
   for (const code of modPermCodes) {
     const permUuid = createdPermissions.get(code);
     if (permUuid) {
       await prisma.rolePermission.create({
-        data: { role: Role.MODERATOR, permission_uuid: permUuid },
+        data: {
+          role_uuid: modRoleUuid,
+          role_code: 'MODERATOR',
+          permission_uuid: permUuid,
+        },
       });
     }
   }
@@ -208,6 +253,40 @@ async function main() {
   }
 
   // Nested child menu items to demonstrate parent-child dynamic navigation hierarchy!
+  const messagingUuid = parentMenuMap.get('Messaging Platform');
+  if (messagingUuid) {
+    const messagingChildren = [
+      { label: 'Overview', icon: 'LayoutDashboard', route: '/admin/messaging?tab=overview', display_order: 1, required_permission: 'messaging.manage' },
+      { label: 'Messages', icon: 'Send', route: '/admin/messaging?tab=history', display_order: 2, required_permission: 'messaging.messages' },
+      { label: 'Campaigns', icon: 'Radio', route: '/admin/messaging?tab=campaigns', display_order: 3, required_permission: 'messaging.campaigns' },
+      { label: 'Contacts', icon: 'Users', route: '/admin/messaging?tab=contacts', display_order: 4, required_permission: 'messaging.contacts' },
+      { label: 'Contact Groups', icon: 'Layers', route: '/admin/messaging?tab=contact-groups', display_order: 5, required_permission: 'messaging.contacts' },
+      { label: 'Templates', icon: 'FileText', route: '/admin/messaging?tab=templates', display_order: 6, required_permission: 'messaging.templates' },
+      { label: 'Providers', icon: 'Server', route: '/admin/messaging?tab=providers', display_order: 7, required_permission: 'messaging.providers' },
+      { label: 'Analytics', icon: 'TrendingUp', route: '/admin/messaging?tab=analytics', display_order: 8, required_permission: 'messaging.analytics' },
+      { label: 'Reports', icon: 'BarChart2', route: '/admin/messaging?tab=reports', display_order: 9, required_permission: 'messaging.analytics' },
+      { label: 'Usage and Quotas', icon: 'PieChart', route: '/admin/messaging?tab=usage', display_order: 10, required_permission: 'messaging.manage' },
+      { label: 'Compliance', icon: 'ShieldCheck', route: '/admin/messaging?tab=compliance', display_order: 11, required_permission: 'messaging.manage' },
+      { label: 'Webhook Monitoring', icon: 'Webhook', route: '/admin/messaging?tab=webhooks', display_order: 12, required_permission: 'messaging.webhooks' },
+      { label: 'Settings', icon: 'Settings', route: '/admin/messaging?tab=settings', display_order: 13, required_permission: 'messaging.settings' },
+    ];
+
+    for (const child of messagingChildren) {
+      await prisma.menuItem.create({
+        data: {
+          parent_uuid: messagingUuid,
+          label: child.label,
+          icon: child.icon,
+          route: child.route,
+          display_order: child.display_order,
+          is_active: true,
+          required_permission: child.required_permission,
+          allowed_roles: 'SUPER_ADMIN,ADMIN,MODERATOR,USER',
+        },
+      });
+    }
+  }
+
   const userMgmtUuid = parentMenuMap.get('User Management');
   if (userMgmtUuid) {
     await prisma.menuItem.create({

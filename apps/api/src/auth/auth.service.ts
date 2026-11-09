@@ -13,6 +13,7 @@ import { PrismaService } from '../database/prisma.service';
 import { ValkeyService } from '../cache/valkey.service';
 import { AuditService } from '../audit/audit.service';
 import { ActivityService } from '../activity/activity.service';
+import { PermissionsService } from './services/permissions.service';
 import {
   RegisterDto,
   LoginDto,
@@ -35,6 +36,7 @@ export class AuthService {
     private readonly valkeyService: ValkeyService,
     private readonly auditService: AuditService,
     private readonly activityService: ActivityService,
+    private readonly permissionsService: PermissionsService,
   ) {}
 
   async register(
@@ -445,7 +447,10 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    const permissions = await this.getUserPermissions(user.role as UserRole);
+    const permissions = await this.permissionsService.getEffectivePermissions(
+      user.user_uuid,
+      user.role as UserRole,
+    );
 
     return {
       ...user,
@@ -461,7 +466,7 @@ export class AuthService {
       return allPerms.map((p) => p.code);
     }
     const rolePerms = await this.prisma.rolePermission.findMany({
-      where: { role: role as PrismaRole },
+      where: { role_code: role },
       include: { permission: true },
     });
     return rolePerms.map((rp) => rp.permission.code);

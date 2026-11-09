@@ -8,10 +8,14 @@ import {
   Res,
   HttpCode,
   HttpStatus,
+  Sse,
+  MessageEvent,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Request, Response } from 'express';
+import { Observable } from 'rxjs';
 import { AuthService } from './auth.service';
+import { PermissionsService } from './services/permissions.service';
 import { Public } from './decorators/public.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -27,7 +31,10 @@ import {
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly permissionsService: PermissionsService,
+  ) {}
 
   @Public()
   @Post('register')
@@ -171,5 +178,27 @@ export class AuthController {
   @ApiOperation({ summary: 'Get current user profile, role, and permissions' })
   async getProfile(@CurrentUser('user_uuid') userUuid: string) {
     return this.authService.getProfile(userUuid);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get('effective-permissions')
+  @ApiOperation({ summary: 'Get live effective permissions breakdown for authenticated user' })
+  async getEffectivePermissions(@CurrentUser('user_uuid') userUuid: string) {
+    return this.permissionsService.getEffectivePermissionsDetail(userUuid);
+  }
+
+  @Get('permissions/version')
+  @Public()
+  @ApiOperation({ summary: 'Get current global permissions cache version' })
+  async getPermissionsVersion() {
+    return { version: await this.permissionsService.getVersion() };
+  }
+
+  @Sse('permissions/stream')
+  @Public()
+  @ApiOperation({ summary: 'Server-Sent Events (SSE) real-time stream for permission invalidations' })
+  streamPermissions(): Observable<MessageEvent> {
+    return this.permissionsService.getStream();
   }
 }

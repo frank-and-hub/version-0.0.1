@@ -17,6 +17,8 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import {
   SmsService,
@@ -117,7 +119,8 @@ export class SmsController {
   // --------------------------------------------------------------------------
 
   @Post('messaging/sms/send')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('messaging.manage')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Send or schedule an SMS message' })
   async sendSms(
@@ -128,7 +131,8 @@ export class SmsController {
   }
 
   @Post('messaging/sms/bulk')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('messaging.manage')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Send controlled bulk SMS messages' })
   async sendBulkSms(
@@ -139,7 +143,8 @@ export class SmsController {
   }
 
   @Post('messaging/sms/:uuid/cancel')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('messaging.manage')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Cancel a scheduled SMS message before dispatch' })
   async cancelScheduled(
@@ -157,7 +162,8 @@ export class SmsController {
   }
 
   @Get('messaging/sms')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('messaging.manage')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get SMS message history with pagination and filters' })
   async getMessages(
@@ -168,7 +174,8 @@ export class SmsController {
   }
 
   @Get('messaging/sms/stats')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('messaging.manage')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get aggregated SMS platform delivery statistics' })
   async getStats(@CurrentUser('uuid') userUuid: string) {
@@ -176,7 +183,8 @@ export class SmsController {
   }
 
   @Get('messaging/sms/conversations')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('messaging.manage')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List SMS two-way conversation threads' })
   async getConversations(@CurrentUser('uuid') userUuid: string) {
@@ -184,7 +192,8 @@ export class SmsController {
   }
 
   @Get('messaging/sms/conversations/:uuid/messages')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('messaging.manage')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List message history inside an SMS conversation' })
   async getConversationMessages(
@@ -199,7 +208,8 @@ export class SmsController {
   // --------------------------------------------------------------------------
 
   @Get('messaging/sms/opt-outs')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('messaging.manage')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all opted-out phone numbers' })
   async getOptOuts(@CurrentUser('uuid') userUuid: string) {
@@ -207,7 +217,8 @@ export class SmsController {
   }
 
   @Post('messaging/sms/opt-outs')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('messaging.manage')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Manually add a phone number to the opt-out list' })
   async addOptOut(
@@ -219,7 +230,8 @@ export class SmsController {
   }
 
   @Delete('messaging/sms/opt-outs/:phone')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('messaging.manage')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Remove a phone number from opt-out list (opt back in)' })
   async removeOptOut(
@@ -234,7 +246,8 @@ export class SmsController {
   // --------------------------------------------------------------------------
 
   @Get('messaging/sms/templates')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('messaging.manage')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List saved SMS templates' })
   async getTemplates(@CurrentUser('uuid') userUuid: string) {
@@ -242,7 +255,8 @@ export class SmsController {
   }
 
   @Post('messaging/sms/templates')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('messaging.manage')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new SMS template' })
   async createTemplate(
@@ -253,7 +267,8 @@ export class SmsController {
   }
 
   @Patch('messaging/sms/templates/:uuid')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('messaging.manage')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update an existing SMS template' })
   async updateTemplate(
@@ -265,7 +280,8 @@ export class SmsController {
   }
 
   @Delete('messaging/sms/templates/:uuid')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('messaging.manage')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete an SMS template' })
   async deleteTemplate(

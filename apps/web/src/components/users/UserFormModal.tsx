@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { User, UserRole, UserStatus, CreateUserDto, UpdateUserDto } from '@monorepo/shared-types';
+import { api } from '@/lib/api';
 import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
@@ -36,6 +37,33 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [availableRoles, setAvailableRoles] = useState<Array<{ label: string; value: string }>>([
+    { label: 'Standard User (USER)', value: UserRole.USER },
+    { label: 'Moderator (MODERATOR)', value: UserRole.MODERATOR },
+    { label: 'Administrator (ADMIN)', value: UserRole.ADMIN },
+    { label: 'Super Administrator (SUPER_ADMIN)', value: UserRole.SUPER_ADMIN },
+  ]);
+
+  useEffect(() => {
+    async function loadRoles() {
+      try {
+        const roles = await api.get<any[]>('/roles');
+        if (Array.isArray(roles) && roles.length > 0) {
+          setAvailableRoles(
+            roles.map((r) => ({
+              label: `${r.name} (${r.code})`,
+              value: r.code,
+            })),
+          );
+        }
+      } catch {
+        // Fall back to default roles
+      }
+    }
+    if (isOpen) {
+      loadRoles();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (user) {
@@ -184,12 +212,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
             label="Role (RBAC)"
             value={formData.role}
             onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
-            options={[
-              { label: 'Standard User (USER)', value: UserRole.USER },
-              { label: 'Moderator (MODERATOR)', value: UserRole.MODERATOR },
-              { label: 'Administrator (ADMIN)', value: UserRole.ADMIN },
-              { label: 'Super Administrator (SUPER_ADMIN)', value: UserRole.SUPER_ADMIN },
-            ]}
+            options={availableRoles}
           />
 
           <Select

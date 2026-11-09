@@ -87,9 +87,9 @@ export function AdminTopbar({ onMobileOpen }: AdminTopbarProps) {
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="flex items-center gap-2.5 p-1 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left focus:outline-none"
           >
-            <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0 btn hadow-sm">
-              {firstName[0]}
-              {lastName[0]}
+            <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm">
+              {firstName[0] || "U"}
+              {lastName[0] || ""}
             </div>
             <div className="hidden sm:block text-right">
               <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 leading-tight">

@@ -38,6 +38,10 @@ class ApiClient {
     return this.accessToken;
   }
 
+  getBaseUrl() {
+    return API_BASE_URL;
+  }
+
   private onTokenRefreshed(token: string) {
     this.refreshSubscribers.forEach((cb) => cb(token));
     this.refreshSubscribers = [];

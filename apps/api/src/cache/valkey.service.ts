@@ -74,6 +74,26 @@ export class ValkeyService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  async delByPattern(pattern: string): Promise<void> {
+    try {
+      const keys = await this.client.keys(pattern);
+      if (keys && keys.length > 0) {
+        await this.client.del(...keys);
+      }
+    } catch (err: any) {
+      this.logger.error(`Valkey delByPattern error for pattern ${pattern}: ${err?.message || err}`);
+    }
+  }
+
+  async publish(channel: string, message: string): Promise<number> {
+    try {
+      return await this.client.publish(channel, message);
+    } catch (err: any) {
+      this.logger.error(`Valkey publish error on channel ${channel}: ${err?.message || err}`);
+      return 0;
+    }
+  }
+
   async exists(key: string): Promise<boolean> {
     try {
       const count = await this.client.exists(key);

@@ -1,14 +1,14 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
-import { PrismaService } from '../../database/prisma.service';
+import { PermissionsService } from '../services/permissions.service';
 import { UserRole } from '@monorepo/shared-types';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    private readonly prisma: PrismaService,
+    private readonly permissionsService: PermissionsService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -31,24 +31,23 @@ export class PermissionsGuard implements CanActivate {
       return true;
     }
 
-    // Regular users have no admin permissions
-    if (user.role === UserRole.USER) {
-      throw new ForbiddenException('Standard users cannot perform administrative actions');
-    }
+    const userUuid = user.user_uuid || user.id;
 
-    // Query active permissions for role
-    let permissions: string[] = user.permissions;
-    if (!permissions || !Array.isArray(permissions)) {
-      const rolePerms = await this.prisma.rolePermission.findMany({
-        where: { role: user.role },
-        include: { permission: true },
-      });
-      permissions = rolePerms.map((rp) => rp.permission.code);
-    }
+    // Fetch live effective permissions (combining role permissions + user grants - user denials)
+    const effectivePermissions = await this.permissionsService.getEffectivePermissions(
+      userUuid,
+      user.role as UserRole,
+    );
 
-    const hasAllRequired = requiredPermissions.every((perm) => permissions.includes(perm));
+    // Verify all required permissions (taking hierarchy into account)
+    const hasAllRequired = requiredPermissions.every((perm) =>
+      this.permissionsService.hasPermission(effectivePermissions, perm, user.role),
+    );
+
     if (!hasAllRequired) {
-      const missing = requiredPermissions.filter((p) => !permissions.includes(p));
+      const missing = requiredPermissions.filter(
+        (p) => !this.permissionsService.hasPermission(effectivePermissions, p, user.role),
+      );
       throw new ForbiddenException(`Insufficient permissions: missing ${missing.join(', ')}`);
     }
 

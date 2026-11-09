@@ -283,8 +283,7 @@ export default function AdminUsersPage() {
             User Management
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            PostgreSQL relational entities with UUID keys, RBAC control, and
-            activity auditing.
+            {/* PostgreSQL relational entities with UUID keys, RBAC control, and activity auditing. */}
           </p>
         </div>
 

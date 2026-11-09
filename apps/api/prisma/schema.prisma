@@ -30,6 +30,8 @@ model User {
   address                String?            @map("address")
   profile_picture_url    String?            @map("profile_picture_url")
   role                   Role               @default(USER)
+  role_uuid              String?            @map("role_uuid")
+  custom_role            RoleDefinition?    @relation(fields: [role_uuid], references: [role_uuid], onDelete: SetNull)
   status                 UserStatus         @default(ACTIVE)
   last_login_at          DateTime?          @map("last_login_at")
   failed_login_attempts  Int                @default(0) @map("failed_login_attempts")
@@ -50,6 +52,7 @@ model User {
   sms_messages           SmsMessage[]
   sms_templates          SmsTemplate[]
   sms_opt_outs           SmsOptOut[]
+  user_permissions       UserPermission[]
   created_at             DateTime           @default(now()) @map("created_at")
   updated_at             DateTime           @updatedAt @map("updated_at")
 
@@ -66,6 +69,7 @@ model Permission {
   category        String
   description     String?
   role_mappings   RolePermission[]
+  user_permissions UserPermission[]
   created_at      DateTime         @default(now()) @map("created_at")
 
   @@index([code])
@@ -73,13 +77,52 @@ model Permission {
   @@map("permissions")
 }
 
-model RolePermission {
-  role            Role
-  permission_uuid String     @map("permission_uuid")
-  permission      Permission @relation(fields: [permission_uuid], references: [permission_uuid], onDelete: Cascade)
+model RoleDefinition {
+  role_uuid        String           @id @default(uuid()) @map("role_uuid")
+  code             String           @unique
+  name             String
+  description      String?
+  is_system        Boolean          @default(false) @map("is_system")
+  created_at       DateTime         @default(now()) @map("created_at")
+  updated_at       DateTime         @updatedAt @map("updated_at")
+  role_permissions RolePermission[]
+  users            User[]
 
-  @@id([role, permission_uuid])
+  @@index([code])
+  @@map("roles")
+}
+
+model RolePermission {
+  role_permission_uuid String         @id @default(uuid()) @map("role_permission_uuid")
+  role_uuid            String         @map("role_uuid")
+  role_code            String         @map("role_code")
+  permission_uuid      String         @map("permission_uuid")
+  role                 RoleDefinition @relation(fields: [role_uuid], references: [role_uuid], onDelete: Cascade)
+  permission           Permission     @relation(fields: [permission_uuid], references: [permission_uuid], onDelete: Cascade)
+
+  @@unique([role_uuid, permission_uuid])
+  @@index([role_uuid])
+  @@index([role_code])
+  @@index([permission_uuid])
   @@map("role_permissions")
+}
+
+model UserPermission {
+  user_permission_uuid String     @id @default(uuid()) @map("user_permission_uuid")
+  user_uuid            String     @map("user_uuid")
+  permission_uuid      String     @map("permission_uuid")
+  is_granted           Boolean    @default(true) @map("is_granted")
+  granted_by_uuid      String?    @map("granted_by_uuid")
+  created_at           DateTime   @default(now()) @map("created_at")
+  updated_at           DateTime   @updatedAt @map("updated_at")
+
+  user                 User       @relation(fields: [user_uuid], references: [user_uuid], onDelete: Cascade)
+  permission           Permission @relation(fields: [permission_uuid], references: [permission_uuid], onDelete: Cascade)
+
+  @@unique([user_uuid, permission_uuid])
+  @@index([user_uuid])
+  @@index([permission_uuid])
+  @@map("user_permissions")
 }
 
 model RefreshToken {

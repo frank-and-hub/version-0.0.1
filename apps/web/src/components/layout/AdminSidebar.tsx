@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { MenuItem } from "@monorepo/shared-types";
 import { api } from "@/lib/api";
 import {
@@ -25,6 +25,23 @@ import {
   ChevronLeft,
   X,
   Circle,
+  Mail,
+  Send,
+  Smartphone,
+  Key,
+  Share2,
+  FileText,
+  BarChart2,
+  PieChart,
+  Bell,
+  ShieldAlert,
+  List,
+  Compass,
+  Radio,
+  Server,
+  TrendingUp,
+  Webhook,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +59,24 @@ const ICON_MAP: Record<string, React.ElementType> = {
   User,
   Activity,
   Network,
+  Mail,
+  Send,
+  Smartphone,
+  Key,
+  Share2,
+  FileText,
+  BarChart2,
+  PieChart,
+  Bell,
+  ShieldAlert,
+  List,
+  Compass,
+  Radio,
+  Server,
+  TrendingUp,
+  Webhook,
+  MessageSquare,
+  Layers,
 };
 
 interface AdminSidebarProps {
@@ -58,38 +93,58 @@ export function AdminSidebar({
   onToggleCollapse,
 }: AdminSidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const fullCurrentUrl = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>(
     {},
   );
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadMenu() {
-      try {
-        const tree = await api.get<MenuItem[]>("/navigation/menu");
-        setMenuItems(tree);
+  const loadMenu = useCallback(async () => {
+    try {
+      const tree = await api.get<MenuItem[]>("/navigation/menu");
+      setMenuItems(tree);
 
-        // Auto-expand parents of active route
-        const initialExpanded: Record<string, boolean> = {};
-        tree.forEach((item) => {
-          const itemKey = item.menuUuid || item.menu_uuid || "";
-          if (
-            item.children &&
-            item.children.some((c) => pathname.startsWith(c.route))
-          ) {
-            initialExpanded[itemKey] = true;
-          }
-        });
-        setExpandedMenus(initialExpanded);
-      } catch (err) {
-        console.error("Failed to load dynamic sidebar menu:", err);
-      } finally {
-        setIsLoading(false);
-      }
+      // Auto-expand parents of active route
+      const initialExpanded: Record<string, boolean> = {};
+      tree.forEach((item) => {
+        const itemKey = item.menuUuid || item.menu_uuid || "";
+        if (
+          item.children &&
+          item.children.some(
+            (c) =>
+              fullCurrentUrl === c.route ||
+              fullCurrentUrl.startsWith(c.route) ||
+              pathname === c.route.split("?")[0],
+          )
+        ) {
+          initialExpanded[itemKey] = true;
+        }
+      });
+      setExpandedMenus((prev) => ({ ...initialExpanded, ...prev }));
+    } catch (err) {
+      console.error("Failed to load dynamic sidebar menu:", err);
+    } finally {
+      setIsLoading(false);
     }
+  }, [fullCurrentUrl, pathname]);
+
+  useEffect(() => {
     loadMenu();
-  }, [pathname]);
+  }, [loadMenu]);
+
+  // Real-time permission event listener
+  useEffect(() => {
+    const handlePermissionsUpdated = () => {
+      loadMenu();
+    };
+
+    window.addEventListener("auth:permissions-updated", handlePermissionsUpdated);
+    return () => {
+      window.removeEventListener("auth:permissions-updated", handlePermissionsUpdated);
+    };
+  }, [loadMenu]);
 
   const toggleExpand = (menuUuid: string) => {
     setExpandedMenus((prev) => ({ ...prev, [menuUuid]: !prev[menuUuid] }));
@@ -108,12 +163,12 @@ export function AdminSidebar({
           href="/admin/dashboard"
           className="flex items-center gap-3 overflow-hidden"
         >
-          <div className="p-2 bg-indigo-400 text-white rounded-xl shadow-md shrink-0">
+          {/* <div className="p-2 bg-indigo-400 text-white rounded-xl shadow-md shrink-0">
             <Layers className="w-5 h-5" />
-          </div>
+          </div> */}
           {!isCollapsed && (
             <div className="flex flex-col truncate">
-              <span className="font-bold text-sm text-white tracking-tight">
+              <span className="font-bold text-sm text-red tracking-tight">
                 Enterprise Stack
               </span>
               <span className="text-[10px] text-slate-400 font-medium">
@@ -258,7 +313,7 @@ export function AdminSidebar({
       <aside
         className={cn(
           "hidden md:block transition-all duration-300 ease-in-out shrink-0 border-r border-slate-200 z-30 sticky top-0 h-screen",
-          isCollapsed ? "w-20" : "w-64",
+          isCollapsed ? "w-16" : "w-64",
         )}
       >
         {sidebarContent}

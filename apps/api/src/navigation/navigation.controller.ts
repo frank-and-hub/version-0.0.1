@@ -28,8 +28,9 @@ export class NavigationController {
   async getUserMenu(
     @CurrentUser('role') role: UserRole,
     @CurrentUser('permissions') permissions: string[],
+    @CurrentUser('user_uuid') userUuid: string,
   ) {
-    return this.navigationService.getUserMenu(role, permissions || []);
+    return this.navigationService.getUserMenu(role, permissions || [], userUuid);
   }
 
   @Get('items')

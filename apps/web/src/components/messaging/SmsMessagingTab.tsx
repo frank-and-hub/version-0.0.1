@@ -630,7 +630,7 @@ export function SmsMessagingTab({
             className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-1.5"
           >
             <Plus className="w-4 h-4" />
-            <span>Connect SMS Provider</span>
+            <span>Connect</span>
           </Button>
         </div>
       </div>
@@ -748,14 +748,14 @@ export function SmsMessagingTab({
           <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 mb-4">
             Connect Twilio, AWS SNS, MessageBird, Vonage, Plivo, Telnyx, or Infobip to send and receive text messages.
           </p>
-          <Button
+          {/* <Button
             size="sm"
             onClick={() => onOpenConnectModal("SMS")}
             className="bg-indigo-600 hover:bg-indigo-700 text-white"
           >
             <Plus className="w-4 h-4 mr-1.5" />
             Connect SMS Provider
-          </Button>
+          </Button> */}
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

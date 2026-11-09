@@ -18,6 +18,8 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import {
   WhatsAppService,
@@ -81,7 +83,8 @@ export class WhatsAppController {
   // --------------------------------------------------------------------------
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @RequirePermissions('messaging.manage')
   @Get('messaging/whatsapp/conversations')
   @ApiOperation({ summary: 'List customer WhatsApp conversations' })
   async listConversations(
@@ -92,7 +95,8 @@ export class WhatsAppController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @RequirePermissions('messaging.manage')
   @Get('messaging/whatsapp/conversations/:conversationUuid/messages')
   @ApiOperation({ summary: 'Get chronological message history for a conversation' })
   async getConversationMessages(
@@ -103,7 +107,8 @@ export class WhatsAppController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @RequirePermissions('messaging.manage')
   @Post('messaging/whatsapp/messages/send')
   @ApiOperation({ summary: 'Send an outbound WhatsApp message (Session or Template)' })
   async sendMessage(
@@ -114,7 +119,8 @@ export class WhatsAppController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @RequirePermissions('messaging.manage')
   @Get('messaging/whatsapp/session-check')
   @ApiOperation({ summary: 'Check 24-hour customer service window status for a contact' })
   async checkSessionWindow(
@@ -125,7 +131,8 @@ export class WhatsAppController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @RequirePermissions('messaging.manage')
   @Get('messaging/whatsapp/templates')
   @ApiOperation({ summary: 'List synced WhatsApp templates' })
   async listTemplates(
@@ -136,7 +143,8 @@ export class WhatsAppController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @RequirePermissions('messaging.manage')
   @Post('messaging/whatsapp/templates')
   @ApiOperation({ summary: 'Create a custom WhatsApp message template' })
   async createTemplate(
@@ -147,7 +155,8 @@ export class WhatsAppController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @RequirePermissions('messaging.manage')
   @Put('messaging/whatsapp/templates/:templateUuid')
   @ApiOperation({ summary: 'Update an existing WhatsApp message template' })
   async updateTemplate(
@@ -159,7 +168,8 @@ export class WhatsAppController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @RequirePermissions('messaging.manage')
   @Delete('messaging/whatsapp/templates/:templateUuid')
   @ApiOperation({ summary: 'Delete a WhatsApp message template' })
   async deleteTemplate(
@@ -170,7 +180,8 @@ export class WhatsAppController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @RequirePermissions('messaging.manage')
   @Post('messaging/whatsapp/templates/sync/:configurationUuid')
   @ApiOperation({ summary: 'Sync templates from Meta Cloud API into database' })
   async syncTemplates(

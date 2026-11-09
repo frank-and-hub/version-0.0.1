@@ -133,7 +133,7 @@ export default function LoginPage() {
           {/* Quick Demo Credentials */}
           <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-200" style={{ display: process.env.NODE_ENV === 'development' ? 'block' : 'none' }}>
             <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 text-center">
-              Quick Role Testing Credentials
+              Quick Testing Credentials
             </p>
             <div className="grid grid-cols-2 gap-2 text-center">
               <button
