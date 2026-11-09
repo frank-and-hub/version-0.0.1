@@ -313,7 +313,7 @@ export default function MessagesLogPage() {
               {filteredMessages.map((msg) => (
                 <tr
                   key={msg.id}
-                  className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50"
+                  className="hover:bg-slate-50/50 dark:hover:bg-slate-800/75"
                 >
                   <td className="py-3 px-4">
                     <Badge
@@ -360,7 +360,7 @@ export default function MessagesLogPage() {
                   <td className="py-3 px-4 text-right">
                     <button
                       onClick={() => setSelectedMessageUuid(msg.id)}
-                      className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/50"
+                      className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/75"
                       title="Inspect message timeline and delivery receipts"
                     >
                       <Eye className="w-4 h-4" />

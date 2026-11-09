@@ -187,7 +187,7 @@ export function AdminSidebar({
         </Link>
         <a
           onClick={onToggleCollapse}
-          className="hidden md:flex p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800/50 transition-colors"
+          className="hidden md:flex p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800/75 transition-colors"
           title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {isCollapsed ? (
@@ -198,7 +198,7 @@ export function AdminSidebar({
         </a>
         <a
           onClick={onMobileClose}
-          className="md:hidden p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800/50"
+          className="md:hidden p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800/75"
         >
           <X className="w-5 h-5" />
         </a>
@@ -234,7 +234,7 @@ export function AdminSidebar({
                       "w-full flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg transition-colors",
                       isActive
                         ? "bg-indigo-400 text-white btn"
-                        : "text-slate-400 hover:text-white hover:bg-slate-800/50",
+                        : "text-slate-400 hover:text-white hover:bg-slate-800/75",
                     )}
                     title={isCollapsed ? item.label : undefined}
                   >
@@ -294,7 +294,7 @@ export function AdminSidebar({
                   "flex items-center gap-3 px-3 py-2 text-xs font-medium rounded-lg transition-colors",
                   isActive
                     ? "bg-indigo-400 text-white font-semibold btn hadow-sm btn"
-                    : "text-slate-400 hover:text-white hover:bg-slate-800/50",
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/75",
                 )}
                 title={isCollapsed ? item.label : undefined}
               >

@@ -112,7 +112,8 @@ export const WebhookManagerTab: React.FC<{
     setIsLoading(true);
     setFeedback(null);
     try {
-      const channelParam = activeChannel !== "ALL" ? `&channel=${activeChannel}` : "";
+      const channelParam =
+        activeChannel !== "ALL" ? `&channel=${activeChannel}` : "";
       const [endRes, evRes] = await Promise.allSettled([
         api.get(`/messaging/webhook-endpoints/${configUuid}`),
         api.get(
@@ -164,7 +165,8 @@ export const WebhookManagerTab: React.FC<{
       );
       setFeedback({
         type: "success",
-        message: "Webhook verification key / signing secret saved successfully!",
+        message:
+          "Webhook verification key / signing secret saved successfully!",
       });
       setSecretInput("");
       loadEndpointAndEvents(selectedConfigUuid);
@@ -220,8 +222,10 @@ export const WebhookManagerTab: React.FC<{
 
   const channelIcon = (type?: string) => {
     const t = type?.toUpperCase();
-    if (t === "WHATSAPP") return <MessageSquare className="w-3.5 h-3.5 text-emerald-500" />;
-    if (t === "SMS") return <Smartphone className="w-3.5 h-3.5 text-cyan-500" />;
+    if (t === "WHATSAPP")
+      return <MessageSquare className="w-3.5 h-3.5 text-emerald-500" />;
+    if (t === "SMS")
+      return <Smartphone className="w-3.5 h-3.5 text-cyan-500" />;
     return <Mail className="w-3.5 h-3.5 text-indigo-500" />;
   };
 
@@ -235,7 +239,8 @@ export const WebhookManagerTab: React.FC<{
             <span>Omnichannel Webhooks & Delivery Ingestion</span>
           </h3>
           <p className="text-xs text-slate-500">
-            Real-time delivery receipts, open/click telemetry, inbound messages, and signature verification for Email, WhatsApp & SMS
+            Real-time delivery receipts, open/click telemetry, inbound messages,
+            and signature verification for Email, WhatsApp & SMS
           </p>
         </div>
 
@@ -343,7 +348,8 @@ export const WebhookManagerTab: React.FC<{
                   Target Webhook Callback Endpoints
                 </span>
                 <Badge variant="slate" className="text-[10px]">
-                  {endpointData.provider_name} ({endpointData.channel || "CHANNEL"})
+                  {endpointData.provider_name} (
+                  {endpointData.channel || "CHANNEL"})
                 </Badge>
               </div>
               <div className="flex items-center gap-2">
@@ -377,7 +383,9 @@ export const WebhookManagerTab: React.FC<{
                 <Button
                   size="sm"
                   variant="primary"
-                  onClick={() => handleCopy(endpointData.webhook_url, "primary")}
+                  onClick={() =>
+                    handleCopy(endpointData.webhook_url, "primary")
+                  }
                   className="flex items-center gap-1.5 whitespace-nowrap"
                 >
                   {copiedKey === "primary" ? (
@@ -406,7 +414,9 @@ export const WebhookManagerTab: React.FC<{
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleCopy(endpointData.inbound_webhook_url!, "inbound")}
+                    onClick={() =>
+                      handleCopy(endpointData.inbound_webhook_url!, "inbound")
+                    }
                     className="flex items-center gap-1.5 whitespace-nowrap"
                   >
                     {copiedKey === "inbound" ? (
@@ -485,19 +495,19 @@ export const WebhookManagerTab: React.FC<{
                 Endpoint Performance
               </h4>
               <div className="space-y-2.5 text-xs">
-                <div className="flex justify-between p-2 rounded bg-slate-50 dark:bg-slate-800/50">
+                <div className="flex justify-between p-2 rounded bg-slate-50 dark:bg-slate-800/75">
                   <span className="text-slate-500">Total Events Ingested:</span>
                   <span className="font-bold text-slate-900 dark:text-white">
                     {endpointData.total_events_received}
                   </span>
                 </div>
-                <div className="flex justify-between p-2 rounded bg-slate-50 dark:bg-slate-800/50">
+                <div className="flex justify-between p-2 rounded bg-slate-50 dark:bg-slate-800/75">
                   <span className="text-slate-500">Failed / Rejected:</span>
                   <span className="font-bold text-rose-600">
                     {endpointData.failed_events_count}
                   </span>
                 </div>
-                <div className="flex justify-between p-2 rounded bg-slate-50 dark:bg-slate-800/50">
+                <div className="flex justify-between p-2 rounded bg-slate-50 dark:bg-slate-800/75">
                   <span className="text-slate-500">Last Received:</span>
                   <span className="font-mono text-[11px] text-slate-700 dark:text-slate-300">
                     {endpointData.last_received_at
@@ -531,7 +541,8 @@ export const WebhookManagerTab: React.FC<{
               Ingested Webhook Events Log
             </h3>
             <p className="text-xs text-slate-500">
-              Deduplicated and normalized provider delivery receipts, read receipts, opens, clicks, and bounces
+              Deduplicated and normalized provider delivery receipts, read
+              receipts, opens, clicks, and bounces
             </p>
           </div>
           <Button
@@ -565,16 +576,20 @@ export const WebhookManagerTab: React.FC<{
                 {events.map((ev) => (
                   <tr
                     key={ev.event_uuid}
-                    className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50"
+                    className="hover:bg-slate-50/50 dark:hover:bg-slate-800/75"
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5 font-semibold text-[11px]">
                         {channelIcon(ev.provider_configuration?.type)}
-                        <span>{ev.provider_configuration?.type || "EMAIL"}</span>
+                        <span>
+                          {ev.provider_configuration?.type || "EMAIL"}
+                        </span>
                       </div>
                     </td>
                     <td className="px-4 py-3 font-mono text-[11px] text-slate-600 dark:text-slate-300">
-                      {ev.provider_event_id ? `${ev.provider_event_id.slice(0, 16)}...` : "—"}
+                      {ev.provider_event_id
+                        ? `${ev.provider_event_id.slice(0, 16)}...`
+                        : "—"}
                     </td>
                     <td className="px-4 py-3 font-semibold uppercase text-[11px]">
                       {ev.provider_event_type}
@@ -661,7 +676,7 @@ export const WebhookManagerTab: React.FC<{
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+              <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 dark:bg-slate-800/75 rounded-lg">
                 <div>
                   <span className="text-slate-400 block">Event UUID:</span>
                   <span className="font-mono text-slate-800 dark:text-slate-200">
@@ -669,7 +684,9 @@ export const WebhookManagerTab: React.FC<{
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block">Provider Event ID:</span>
+                  <span className="text-slate-400 block">
+                    Provider Event ID:
+                  </span>
                   <span className="font-mono text-slate-800 dark:text-slate-200">
                     {selectedEventModal.provider_event_id || "N/A"}
                   </span>

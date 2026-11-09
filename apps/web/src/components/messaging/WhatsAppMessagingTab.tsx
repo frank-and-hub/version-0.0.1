@@ -1026,7 +1026,7 @@ export const WhatsAppMessagingTab: React.FC<WhatsAppMessagingTabProps> = ({
                         setEditingTemplate(tpl);
                         setIsTemplateModalOpen(true);
                       }}
-                      className="text-xs font-semibold text-slate-500 hover:text-emerald-600 flex items-center gap-1 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors"
+                      className="text-xs font-semibold text-slate-500 hover:text-emerald-600 flex items-center gap-1 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800/75 transition-colors"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                       <span>Edit</span>
@@ -1034,7 +1034,7 @@ export const WhatsAppMessagingTab: React.FC<WhatsAppMessagingTabProps> = ({
                     <button
                       type="button"
                       onClick={() => handleDeleteTemplate(tpl.template_uuid)}
-                      className="text-xs font-semibold text-slate-500 hover:text-rose-600 flex items-center gap-1 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors"
+                      className="text-xs font-semibold text-slate-500 hover:text-rose-600 flex items-center gap-1 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800/75 transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>Delete</span>

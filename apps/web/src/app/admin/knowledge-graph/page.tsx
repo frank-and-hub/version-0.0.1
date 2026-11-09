@@ -465,7 +465,7 @@ export default function KnowledgeGraphPage() {
                     <div
                       key={item.id}
                       onClick={() => handleSelectNode(item)}
-                      className={`p-2.5 rounded-lg cursor-pointer transition-colors flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
+                      className={`p-2.5 rounded-lg cursor-pointer transition-colors flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/75 ${
                         selectedNode?.id === item.id
                           ? "bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800"
                           : ""
@@ -512,7 +512,7 @@ export default function KnowledgeGraphPage() {
               <CardContent className="pt-4 space-y-4">
                 {selectedNode && nodeDetails ? (
                   <div className="space-y-4 text-xs">
-                    <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 space-y-1">
+                    <div className="p-3 bg-slate-50 dark:bg-slate-800/75 rounded-lg border border-slate-200 dark:border-slate-700 space-y-1">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-sm text-indigo-700 dark:text-indigo-400">
                           {nodeDetails.node.label}

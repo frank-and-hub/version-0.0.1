@@ -66,7 +66,7 @@ export const EmailMessageDetailsModal: React.FC<
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/75 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -169,7 +169,7 @@ export const EmailMessageDetailsModal: React.FC<
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-slate-200/50 dark:border-slate-800/50">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-slate-200/50 dark:border-slate-800/75">
                   <div>
                     <span className="text-slate-400 block font-medium">
                       Provider Message ID:
@@ -205,7 +205,7 @@ export const EmailMessageDetailsModal: React.FC<
                 </h4>
                 <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
                   <table className="w-full text-left">
-                    <thead className="bg-slate-50 dark:bg-slate-800/50 uppercase font-semibold text-slate-500 text-[10px]">
+                    <thead className="bg-slate-50 dark:bg-slate-800/75 uppercase font-semibold text-slate-500 text-[10px]">
                       <tr>
                         <th className="px-3 py-2">Email</th>
                         <th className="px-3 py-2">Type</th>

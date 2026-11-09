@@ -20,7 +20,7 @@ export function ThemeToggle({
       type="button"
       style={{ visibility: "hidden" }}
       onClick={toggleTheme}
-      className={`p-2 rounded-lg transition-colors flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/50 ${className}`}
+      className={`p-2 rounded-lg transition-colors flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/75 ${className}`}
       title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
       aria-label="Toggle theme mode"
     >
