@@ -317,7 +317,7 @@ export default function SettingsPage() {
             className={`p-4 rounded-xl border text-left transition-all relative flex flex-col justify-between ${
               selectedThemeDefault === "LIGHT"
                 ? "border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/30 ring-2 ring-indigo-500/20"
-                : "border-slate-200 dark:border-slate-200 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800"
+                : "border-slate-200 dark:border-slate-200 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800/50"
             } ${!isSuperAdmin ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
           >
             <div className="flex items-center justify-between mb-3">
@@ -349,7 +349,7 @@ export default function SettingsPage() {
             className={`p-4 rounded-xl border text-left transition-all relative flex flex-col justify-between ${
               selectedThemeDefault === "DARK"
                 ? "border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/30 ring-2 ring-indigo-500/20"
-                : "border-slate-200 dark:border-slate-200 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800"
+                : "border-slate-200 dark:border-slate-200 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800/50"
             } ${!isSuperAdmin ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
           >
             <div className="flex items-center justify-between mb-3">
@@ -381,7 +381,7 @@ export default function SettingsPage() {
             className={`p-4 rounded-xl border text-left transition-all relative flex flex-col justify-between ${
               selectedThemeDefault === "SYSTEM"
                 ? "border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/30 ring-2 ring-indigo-500/20"
-                : "border-slate-200 dark:border-slate-200 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800"
+                : "border-slate-200 dark:border-slate-200 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800/50"
             } ${!isSuperAdmin ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
           >
             <div className="flex items-center justify-between mb-3">
@@ -417,7 +417,7 @@ export default function SettingsPage() {
               className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 activeCategory === cat
                   ? "bg-indigo-600 text-white btn hadow-sm"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50"
               }`}
             >
               {cat}

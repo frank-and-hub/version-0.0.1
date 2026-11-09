@@ -4,16 +4,19 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "@monorepo/ui": ["../../packages/ui/src/index.ts"],
-      "@monorepo/ui/*": ["../../packages/ui/src/*"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@monorepo/ui": [
+        "../../packages/ui/src/index.ts"
+      ],
+      "@monorepo/ui/*": [
+        "../../packages/ui/src/*"
+      ]
     }
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "**/*.tsx"
   ]
 }
-

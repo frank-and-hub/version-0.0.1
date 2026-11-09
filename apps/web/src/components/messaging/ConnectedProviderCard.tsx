@@ -117,7 +117,7 @@ export const ConnectedProviderCard: React.FC<ConnectedProviderCardProps> = ({
               type="button"
               onClick={() => onSetDefault(configuration.configuration_uuid)}
               disabled={isActionLoading}
-              className="text-xs font-semibold text-slate-500 hover:text-indigo-600 flex items-center gap-1 transition-colors px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="text-xs font-semibold text-slate-500 hover:text-indigo-600 flex items-center gap-1 transition-colors px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800/50"
             >
               <Star className="w-3.5 h-3.5" />
               <span>Make Default</span>

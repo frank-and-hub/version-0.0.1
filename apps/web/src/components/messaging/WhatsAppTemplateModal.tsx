@@ -48,7 +48,9 @@ export const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
   const [headerText, setHeaderText] = useState("");
   const [bodyText, setBodyText] = useState("");
   const [footerText, setFooterText] = useState("");
-  const [buttons, setButtons] = useState<Array<{ type: string; text: string; url?: string }>>([]);
+  const [buttons, setButtons] = useState<
+    Array<{ type: string; text: string; url?: string }>
+  >([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -82,7 +84,9 @@ export const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
       setLanguage("en_US");
       setCategory("MARKETING");
       setHeaderText("");
-      setBodyText("Hello {{1}}, thank you for choosing our service! Your order {{2}} has been confirmed.");
+      setBodyText(
+        "Hello {{1}}, thank you for choosing our service! Your order {{2}} has been confirmed.",
+      );
       setFooterText("Reply STOP to unsubscribe");
       setButtons([
         { type: "QUICK_REPLY", text: "Track Order" },
@@ -139,14 +143,21 @@ export const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
 
     try {
       if (editingTemplate?.template_uuid) {
-        await api.put(`/messaging/whatsapp/templates/${editingTemplate.template_uuid}`, payload);
+        await api.put(
+          `/messaging/whatsapp/templates/${editingTemplate.template_uuid}`,
+          payload,
+        );
       } else {
         await api.post("/messaging/whatsapp/templates", payload);
       }
       onSuccess();
       onClose();
     } catch (err: any) {
-      setErrorMsg(err?.response?.data?.message || err?.message || "Failed to save WhatsApp Template");
+      setErrorMsg(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to save WhatsApp Template",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -163,16 +174,19 @@ export const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                {editingTemplate ? "Edit WhatsApp Message Template" : "Create WhatsApp Message Template"}
+                {editingTemplate
+                  ? "Edit WhatsApp Message Template"
+                  : "Create WhatsApp Message Template"}
               </h3>
               <p className="text-xs text-slate-500">
-                Design compliant Meta WhatsApp templates for customer notifications & 24h window re-opening.
+                Design compliant Meta WhatsApp templates for customer
+                notifications & 24h window re-opening.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -181,7 +195,10 @@ export const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
         {/* Modal Content: Form on Left, Live Bubble Preview on Right */}
         <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 overflow-y-auto">
           {/* Left Form: 7 cols */}
-          <form onSubmit={handleSubmit} className="lg:col-span-7 p-6 space-y-4 border-b lg:border-b-0 lg:border-r border-slate-100 dark:border-slate-800">
+          <form
+            onSubmit={handleSubmit}
+            className="lg:col-span-7 p-6 space-y-4 border-b lg:border-b-0 lg:border-r border-slate-100 dark:border-slate-800"
+          >
             {errorMsg && (
               <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 dark:bg-rose-950/40 dark:border-rose-800 dark:text-rose-300 text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -199,10 +216,16 @@ export const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
                   required
                   placeholder="order_update_confirmation"
                   value={name}
-                  onChange={(e) => setName(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "_"))}
+                  onChange={(e) =>
+                    setName(
+                      e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "_"),
+                    )
+                  }
                   className="w-full text-xs font-mono p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
                 />
-                <p className="text-[10px] text-slate-400 mt-0.5">Lowercase and underscores only</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  Lowercase and underscores only
+                </p>
               </div>
 
               <div>
@@ -215,8 +238,12 @@ export const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
                   className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
                 >
                   <option value="MARKETING">Marketing (Offers, updates)</option>
-                  <option value="UTILITY">Utility (Orders, alerts, account)</option>
-                  <option value="AUTHENTICATION">Authentication (OTPs, codes)</option>
+                  <option value="UTILITY">
+                    Utility (Orders, alerts, account)
+                  </option>
+                  <option value="AUTHENTICATION">
+                    Authentication (OTPs, codes)
+                  </option>
                 </select>
               </div>
             </div>
@@ -313,7 +340,9 @@ export const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
               <div className="space-y-2">
                 {buttons.map((btn, idx) => (
                   <div key={idx} className="flex items-center gap-2">
-                    <span className="text-[11px] font-mono text-slate-400 w-5">#{idx + 1}</span>
+                    <span className="text-[11px] font-mono text-slate-400 w-5">
+                      #{idx + 1}
+                    </span>
                     <input
                       type="text"
                       value={btn.text}
@@ -324,7 +353,7 @@ export const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
                     <button
                       type="button"
                       onClick={() => handleRemoveButton(idx)}
-                      className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                      className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/50"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -334,7 +363,12 @@ export const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
             </div>
 
             <div className="pt-2 flex items-center justify-end gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={onClose}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onClose}
+              >
                 Cancel
               </Button>
               <Button
@@ -348,7 +382,9 @@ export const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
                 ) : (
                   <CheckCircle2 className="w-3.5 h-3.5" />
                 )}
-                <span>{editingTemplate ? "Save Changes" : "Save WhatsApp Template"}</span>
+                <span>
+                  {editingTemplate ? "Save Changes" : "Save WhatsApp Template"}
+                </span>
               </Button>
             </div>
           </form>
@@ -371,7 +407,8 @@ export const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
                   )}
 
                   <p className="whitespace-pre-wrap text-slate-800 dark:text-slate-200 leading-relaxed text-[11px]">
-                    {bodyText || "Your template body message will appear here..."}
+                    {bodyText ||
+                      "Your template body message will appear here..."}
                   </p>
 
                   {footerText && (
@@ -402,7 +439,8 @@ export const WhatsAppTemplateModal: React.FC<WhatsAppTemplateModalProps> = ({
             </div>
 
             <p className="text-[11px] text-slate-400 text-center mt-4">
-              Templates are approved for automated sending outside the 24-hour customer service window.
+              Templates are approved for automated sending outside the 24-hour
+              customer service window.
             </p>
           </div>
         </div>

@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { api } from '@/lib/api';
+import React, { useState, useEffect } from "react";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { api } from "@/lib/api";
 import {
   X,
   Mail,
@@ -17,17 +17,16 @@ import {
   Calendar,
   Layers,
   ArrowRight,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface EmailMessageDetailsModalProps {
   messageUuid: string | null;
   onClose: () => void;
 }
 
-export const EmailMessageDetailsModal: React.FC<EmailMessageDetailsModalProps> = ({
-  messageUuid,
-  onClose,
-}) => {
+export const EmailMessageDetailsModal: React.FC<
+  EmailMessageDetailsModalProps
+> = ({ messageUuid, onClose }) => {
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -43,7 +42,7 @@ export const EmailMessageDetailsModal: React.FC<EmailMessageDetailsModalProps> =
       const res = (await api.get(`/messaging/emails/${uuid}/details`)) as any;
       setData(res?.data || res);
     } catch (err: any) {
-      console.error('Failed to load message details:', err);
+      console.error("Failed to load message details:", err);
     } finally {
       setIsLoading(false);
     }
@@ -61,11 +60,13 @@ export const EmailMessageDetailsModal: React.FC<EmailMessageDetailsModalProps> =
               <Mail className="w-5 h-5 text-indigo-600" />
               <span>Message Delivery & Engagement Details</span>
             </h2>
-            <p className="text-xs text-slate-400 font-mono mt-0.5">{messageUuid}</p>
+            <p className="text-xs text-slate-400 font-mono mt-0.5">
+              {messageUuid}
+            </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -74,7 +75,9 @@ export const EmailMessageDetailsModal: React.FC<EmailMessageDetailsModalProps> =
         {/* Content */}
         <div className="p-6 overflow-y-auto flex-1 space-y-5 text-xs">
           {isLoading || !data ? (
-            <p className="py-12 text-center text-slate-400">Loading delivery telemetry...</p>
+            <p className="py-12 text-center text-slate-400">
+              Loading delivery telemetry...
+            </p>
           ) : (
             <>
               {/* Engagement Stat Cards */}
@@ -86,11 +89,13 @@ export const EmailMessageDetailsModal: React.FC<EmailMessageDetailsModalProps> =
                   <div className="mt-1">
                     <Badge
                       variant={
-                        data.message_info.status === 'DELIVERED' || data.message_info.status === 'ACCEPTED'
-                          ? 'success'
-                          : data.message_info.status === 'FAILED' || data.message_info.status === 'BOUNCED'
-                          ? 'danger'
-                          : 'warning'
+                        data.message_info.status === "DELIVERED" ||
+                        data.message_info.status === "ACCEPTED"
+                          ? "success"
+                          : data.message_info.status === "FAILED" ||
+                              data.message_info.status === "BOUNCED"
+                            ? "danger"
+                            : "warning"
                       }
                     >
                       {data.message_info.status}
@@ -100,7 +105,9 @@ export const EmailMessageDetailsModal: React.FC<EmailMessageDetailsModalProps> =
 
                 <div className="p-3 bg-indigo-50/50 dark:bg-indigo-950/30 rounded-xl border border-indigo-100 dark:border-indigo-900/40">
                   <div className="flex items-center justify-between text-indigo-600 dark:text-indigo-400">
-                    <span className="text-[10px] uppercase font-bold tracking-wider">Opens</span>
+                    <span className="text-[10px] uppercase font-bold tracking-wider">
+                      Opens
+                    </span>
                     <Eye className="w-4 h-4" />
                   </div>
                   <div className="mt-1 flex items-baseline gap-1.5">
@@ -115,7 +122,9 @@ export const EmailMessageDetailsModal: React.FC<EmailMessageDetailsModalProps> =
 
                 <div className="p-3 bg-emerald-50/50 dark:bg-emerald-950/30 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
                   <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
-                    <span className="text-[10px] uppercase font-bold tracking-wider">Clicks</span>
+                    <span className="text-[10px] uppercase font-bold tracking-wider">
+                      Clicks
+                    </span>
                     <MousePointer className="w-4 h-4" />
                   </div>
                   <div className="mt-1 flex items-baseline gap-1.5">
@@ -142,32 +151,41 @@ export const EmailMessageDetailsModal: React.FC<EmailMessageDetailsModalProps> =
               <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-slate-100 dark:border-slate-800 space-y-2">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
-                    <span className="text-slate-400 block font-medium">Subject:</span>
+                    <span className="text-slate-400 block font-medium">
+                      Subject:
+                    </span>
                     <span className="font-semibold text-slate-900 dark:text-white">
                       {data.message_info.subject}
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block font-medium">Sender:</span>
+                    <span className="text-slate-400 block font-medium">
+                      Sender:
+                    </span>
                     <span className="text-slate-700 dark:text-slate-300">
-                      {data.message_info.sender_name} &lt;{data.message_info.sender_email}&gt;
+                      {data.message_info.sender_name} &lt;
+                      {data.message_info.sender_email}&gt;
                     </span>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-slate-200/50 dark:border-slate-800/50">
                   <div>
-                    <span className="text-slate-400 block font-medium">Provider Message ID:</span>
+                    <span className="text-slate-400 block font-medium">
+                      Provider Message ID:
+                    </span>
                     <span className="font-mono text-[11px] text-slate-600 dark:text-slate-400">
-                      {data.message_info.provider_message_id || '—'}
+                      {data.message_info.provider_message_id || "—"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block font-medium">Sent At:</span>
+                    <span className="text-slate-400 block font-medium">
+                      Sent At:
+                    </span>
                     <span className="text-slate-600 dark:text-slate-400">
                       {data.message_info.sent_at
                         ? new Date(data.message_info.sent_at).toLocaleString()
-                        : '—'}
+                        : "—"}
                     </span>
                   </div>
                 </div>
@@ -205,18 +223,21 @@ export const EmailMessageDetailsModal: React.FC<EmailMessageDetailsModalProps> =
                           <td className="px-3 py-2">
                             <span
                               className={`font-semibold ${
-                                r.status === 'DELIVERED'
-                                  ? 'text-emerald-600'
-                                  : r.status === 'BOUNCED' || r.status === 'FAILED'
-                                  ? 'text-rose-600'
-                                  : 'text-amber-600'
+                                r.status === "DELIVERED"
+                                  ? "text-emerald-600"
+                                  : r.status === "BOUNCED" ||
+                                      r.status === "FAILED"
+                                    ? "text-rose-600"
+                                    : "text-amber-600"
                               }`}
                             >
                               {r.status}
                             </span>
                           </td>
                           <td className="px-3 py-2 text-slate-400">
-                            {r.delivered_at ? new Date(r.delivered_at).toLocaleTimeString() : '—'}
+                            {r.delivered_at
+                              ? new Date(r.delivered_at).toLocaleTimeString()
+                              : "—"}
                           </td>
                         </tr>
                       ))}
@@ -239,18 +260,22 @@ export const EmailMessageDetailsModal: React.FC<EmailMessageDetailsModalProps> =
                 ) : (
                   <div className="relative pl-6 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
                     {data.events_timeline.map((ev: any, idx: number) => (
-                      <div key={idx} className="relative flex items-start justify-between gap-3">
+                      <div
+                        key={idx}
+                        className="relative flex items-start justify-between gap-3"
+                      >
                         <div
                           className={`absolute -left-6 top-1 w-2.5 h-2.5 rounded-full ring-4 ring-white dark:ring-slate-900 ${
-                            ev.event_type === 'DELIVERED'
-                              ? 'bg-emerald-500'
-                              : ev.event_type === 'OPENED'
-                              ? 'bg-indigo-500'
-                              : ev.event_type === 'CLICKED'
-                              ? 'bg-cyan-500'
-                              : ev.event_type === 'BOUNCED' || ev.event_type === 'DROPPED'
-                              ? 'bg-rose-500'
-                              : 'bg-slate-400'
+                            ev.event_type === "DELIVERED"
+                              ? "bg-emerald-500"
+                              : ev.event_type === "OPENED"
+                                ? "bg-indigo-500"
+                                : ev.event_type === "CLICKED"
+                                  ? "bg-cyan-500"
+                                  : ev.event_type === "BOUNCED" ||
+                                      ev.event_type === "DROPPED"
+                                    ? "bg-rose-500"
+                                    : "bg-slate-400"
                           }`}
                         />
                         <div>

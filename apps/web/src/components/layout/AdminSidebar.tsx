@@ -94,7 +94,9 @@ export function AdminSidebar({
 }: AdminSidebarProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const fullCurrentUrl = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
+  const fullCurrentUrl = searchParams.toString()
+    ? `${pathname}?${searchParams.toString()}`
+    : pathname;
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>(
     {},
@@ -140,9 +142,15 @@ export function AdminSidebar({
       loadMenu();
     };
 
-    window.addEventListener("auth:permissions-updated", handlePermissionsUpdated);
+    window.addEventListener(
+      "auth:permissions-updated",
+      handlePermissionsUpdated,
+    );
     return () => {
-      window.removeEventListener("auth:permissions-updated", handlePermissionsUpdated);
+      window.removeEventListener(
+        "auth:permissions-updated",
+        handlePermissionsUpdated,
+      );
     };
   }, [loadMenu]);
 
@@ -179,7 +187,7 @@ export function AdminSidebar({
         </Link>
         <a
           onClick={onToggleCollapse}
-          className="hidden md:flex p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+          className="hidden md:flex p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800/50 transition-colors"
           title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {isCollapsed ? (
@@ -190,7 +198,7 @@ export function AdminSidebar({
         </a>
         <a
           onClick={onMobileClose}
-          className="md:hidden p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+          className="md:hidden p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800/50"
         >
           <X className="w-5 h-5" />
         </a>

@@ -256,19 +256,19 @@ async function main() {
   const messagingUuid = parentMenuMap.get('Messaging Platform');
   if (messagingUuid) {
     const messagingChildren = [
-      { label: 'Overview', icon: 'LayoutDashboard', route: '/admin/messaging?tab=overview', display_order: 1, required_permission: 'messaging.manage' },
-      { label: 'Messages', icon: 'Send', route: '/admin/messaging?tab=history', display_order: 2, required_permission: 'messaging.messages' },
-      { label: 'Campaigns', icon: 'Radio', route: '/admin/messaging?tab=campaigns', display_order: 3, required_permission: 'messaging.campaigns' },
-      { label: 'Contacts', icon: 'Users', route: '/admin/messaging?tab=contacts', display_order: 4, required_permission: 'messaging.contacts' },
-      { label: 'Contact Groups', icon: 'Layers', route: '/admin/messaging?tab=contact-groups', display_order: 5, required_permission: 'messaging.contacts' },
-      { label: 'Templates', icon: 'FileText', route: '/admin/messaging?tab=templates', display_order: 6, required_permission: 'messaging.templates' },
-      { label: 'Providers', icon: 'Server', route: '/admin/messaging?tab=providers', display_order: 7, required_permission: 'messaging.providers' },
-      { label: 'Analytics', icon: 'TrendingUp', route: '/admin/messaging?tab=analytics', display_order: 8, required_permission: 'messaging.analytics' },
-      { label: 'Reports', icon: 'BarChart2', route: '/admin/messaging?tab=reports', display_order: 9, required_permission: 'messaging.analytics' },
-      { label: 'Usage and Quotas', icon: 'PieChart', route: '/admin/messaging?tab=usage', display_order: 10, required_permission: 'messaging.manage' },
-      { label: 'Compliance', icon: 'ShieldCheck', route: '/admin/messaging?tab=compliance', display_order: 11, required_permission: 'messaging.manage' },
-      { label: 'Webhook Monitoring', icon: 'Webhook', route: '/admin/messaging?tab=webhooks', display_order: 12, required_permission: 'messaging.webhooks' },
-      { label: 'Settings', icon: 'Settings', route: '/admin/messaging?tab=settings', display_order: 13, required_permission: 'messaging.settings' },
+      { label: 'Overview', icon: 'LayoutDashboard', route: '/admin/messaging', display_order: 1, required_permission: 'messaging.manage' },
+      { label: 'Messages', icon: 'Send', route: '/admin/messaging/messages', display_order: 2, required_permission: 'messaging.messages' },
+      { label: 'Campaigns', icon: 'Radio', route: '/admin/messaging/campaigns', display_order: 3, required_permission: 'messaging.campaigns' },
+      { label: 'Contacts', icon: 'Users', route: '/admin/messaging/contacts', display_order: 4, required_permission: 'messaging.contacts' },
+      { label: 'Contact Groups', icon: 'Layers', route: '/admin/messaging/contact-groups', display_order: 5, required_permission: 'messaging.contacts' },
+      { label: 'Templates', icon: 'FileText', route: '/admin/messaging/templates', display_order: 6, required_permission: 'messaging.templates' },
+      { label: 'Providers', icon: 'Server', route: '/admin/messaging/providers', display_order: 7, required_permission: 'messaging.providers' },
+      { label: 'Analytics', icon: 'TrendingUp', route: '/admin/messaging/analytics', display_order: 8, required_permission: 'messaging.analytics' },
+      { label: 'Reports', icon: 'BarChart2', route: '/admin/messaging/reports', display_order: 9, required_permission: 'messaging.analytics' },
+      { label: 'Usage and Quotas', icon: 'PieChart', route: '/admin/messaging/usage', display_order: 10, required_permission: 'messaging.manage' },
+      { label: 'Compliance', icon: 'ShieldCheck', route: '/admin/messaging/compliance', display_order: 11, required_permission: 'messaging.manage' },
+      { label: 'Webhook Monitoring', icon: 'Webhook', route: '/admin/messaging/webhooks', display_order: 12, required_permission: 'messaging.webhooks' },
+      { label: 'Settings', icon: 'Settings', route: '/admin/messaging/settings', display_order: 13, required_permission: 'messaging.settings' },
     ];
 
     for (const child of messagingChildren) {

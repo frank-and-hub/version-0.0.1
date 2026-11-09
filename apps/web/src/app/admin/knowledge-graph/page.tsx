@@ -465,7 +465,7 @@ export default function KnowledgeGraphPage() {
                     <div
                       key={item.id}
                       onClick={() => handleSelectNode(item)}
-                      className={`p-2.5 rounded-lg cursor-pointer transition-colors flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 ${
+                      className={`p-2.5 rounded-lg cursor-pointer transition-colors flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
                         selectedNode?.id === item.id
                           ? "bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800"
                           : ""

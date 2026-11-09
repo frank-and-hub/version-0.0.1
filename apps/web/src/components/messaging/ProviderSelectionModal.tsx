@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { ProviderDefinition, UserProviderConfiguration } from './types';
-import { ProviderList } from './ProviderList';
-import { DynamicProviderForm } from './DynamicProviderForm';
-import { api } from '@/lib/api';
-import { Loader2, X, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { ProviderDefinition, UserProviderConfiguration } from "./types";
+import { ProviderList } from "./ProviderList";
+import { DynamicProviderForm } from "./DynamicProviderForm";
+import { api } from "@/lib/api";
+import { Loader2, X, AlertCircle } from "lucide-react";
 
 interface ProviderSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (savedConfig: UserProviderConfiguration) => void;
   editConfig?: UserProviderConfiguration | null;
-  channel?: 'EMAIL' | 'WHATSAPP' | 'SMS';
+  channel?: "EMAIL" | "WHATSAPP" | "SMS";
 }
 
 export const ProviderSelectionModal: React.FC<ProviderSelectionModalProps> = ({
@@ -20,10 +20,11 @@ export const ProviderSelectionModal: React.FC<ProviderSelectionModalProps> = ({
   onClose,
   onSuccess,
   editConfig = null,
-  channel = 'EMAIL',
+  channel = "EMAIL",
 }) => {
   const [providers, setProviders] = useState<ProviderDefinition[]>([]);
-  const [selectedProvider, setSelectedProvider] = useState<ProviderDefinition | null>(null);
+  const [selectedProvider, setSelectedProvider] =
+    useState<ProviderDefinition | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,7 +41,9 @@ export const ProviderSelectionModal: React.FC<ProviderSelectionModalProps> = ({
     setIsLoading(true);
     setError(null);
     try {
-      const res = (await api.get(`/messaging/providers?type=${channel}`)) as any;
+      const res = (await api.get(
+        `/messaging/providers?type=${channel}`,
+      )) as any;
       const data: ProviderDefinition[] = Array.isArray(res)
         ? res
         : Array.isArray(res?.data)
@@ -85,32 +88,32 @@ export const ProviderSelectionModal: React.FC<ProviderSelectionModalProps> = ({
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-white">
               {editConfig
-                ? `Edit ${editConfig.provider?.name || 'Provider'} Configuration`
+                ? `Edit ${editConfig.provider?.name || "Provider"} Configuration`
                 : selectedProvider
-                ? `Connect ${selectedProvider.name}`
-                : channel === 'SMS'
-                ? 'Connect SMS Messaging Provider'
-                : channel === 'WHATSAPP'
-                ? 'Connect WhatsApp Messaging Provider'
-                : 'Connect Your Email Provider'}
+                  ? `Connect ${selectedProvider.name}`
+                  : channel === "SMS"
+                    ? "Connect SMS Messaging Provider"
+                    : channel === "WHATSAPP"
+                      ? "Connect WhatsApp Messaging Provider"
+                      : "Connect Your Email Provider"}
             </h2>
             <p className="text-xs text-slate-500">
               {selectedProvider
-                ? channel === 'SMS'
-                  ? 'Fill in Twilio credentials to start sending global SMS alerts, 2FA, and notifications'
-                  : channel === 'WHATSAPP'
-                  ? 'Fill in official credentials to start sending WhatsApp templates & interactive chats'
-                  : 'Fill in authentication credentials to start dispatching system emails'
-                : channel === 'SMS'
-                ? 'Choose from carrier-grade SMS gateways such as Twilio Programmable SMS'
-                : channel === 'WHATSAPP'
-                ? 'Choose from official Meta Cloud API, Interakt, WATI, and Twilio WhatsApp providers'
-                : 'Choose from supported high-throughput enterprise mail providers'}
+                ? channel === "SMS"
+                  ? "Fill in Twilio credentials to start sending global SMS alerts, 2FA, and notifications"
+                  : channel === "WHATSAPP"
+                    ? "Fill in official credentials to start sending WhatsApp templates & interactive chats"
+                    : "Fill in authentication credentials to start dispatching system emails"
+                : channel === "SMS"
+                  ? "Choose from carrier-grade SMS gateways such as Twilio Programmable SMS"
+                  : channel === "WHATSAPP"
+                    ? "Choose from official Meta Cloud API, Interakt, WATI, and Twilio WhatsApp providers"
+                    : "Choose from supported high-throughput enterprise mail providers"}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -121,7 +124,9 @@ export const ProviderSelectionModal: React.FC<ProviderSelectionModalProps> = ({
           {isLoading ? (
             <div className="py-12 flex flex-col items-center justify-center gap-3">
               <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-              <p className="text-xs text-slate-400">Loading available providers from database...</p>
+              <p className="text-xs text-slate-400">
+                Loading available providers from database...
+              </p>
             </div>
           ) : error ? (
             <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 dark:bg-rose-950/40 dark:border-rose-800 dark:text-rose-300 text-xs flex items-center gap-2">
@@ -136,7 +141,7 @@ export const ProviderSelectionModal: React.FC<ProviderSelectionModalProps> = ({
             />
           ) : (
             <DynamicProviderForm
-              key={`${selectedProvider.provider_uuid || selectedProvider.slug}_${editConfig?.configuration_uuid || 'new'}`}
+              key={`${selectedProvider.provider_uuid || selectedProvider.slug}_${editConfig?.configuration_uuid || "new"}`}
               provider={selectedProvider}
               isEditMode={!!editConfig}
               initialValues={
